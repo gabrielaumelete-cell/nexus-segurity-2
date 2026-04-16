@@ -1,4 +1,4 @@
-        <!DOCTYPE html>
+            <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -109,23 +109,43 @@
             outline: none;
         }
 
-        #face-scanner {
-            width: 100%; height: 120px; border: 1px solid #222;
-            display: flex; align-items: center; justify-content: center;
-            position: relative; background: #050505; overflow: hidden;
+        /* CAMERA / SCANNER REAL */
+        #camera-container {
+            width: 100%;
+            height: 150px;
+            border: 1px solid #222;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #webcam-view {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ajusta a imagem da câmera */
+            filter: grayscale(1) contrast(1.2) brightness(0.8); /* Efeito Cyberpunk */
+            transform: scaleX(-1); /* Espelha a câmera */
         }
 
         .scanning-line {
-            width: 100%; height: 2px; background: var(--primary-green);
-            position: absolute; top: 0; animation: scan 2s infinite linear;
+            width: 100%;
+            height: 2px;
+            background: var(--primary-green);
+            position: absolute;
+            top: 0;
+            animation: scan 2s infinite linear;
             display: none;
             box-shadow: 0 0 10px var(--primary-green);
+            z-index: 5;
         }
 
         @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
     </style>
 </head>
-<body>
+<body onload="setupCamera()">
 
 <div id="modal-overlay">
     <div id="step-card" class="modal-content" style="display: none;">
@@ -138,7 +158,6 @@
 
     <div id="step-manual" class="modal-content" style="display: none;">
         <h2>LOGIN POR ID</h2>
-        <p style="font-size: 0.6rem;">INSIRA AS CREDENCIAIS</p>
         <input type="text" id="manual-id-input" placeholder="EX: ID-RR-3040">
         <button onclick="checkManualID()">INICIAR FACE SCAN</button>
         <button onclick="closeModal()" style="border:none; color: #555;">VOLTAR</button>
@@ -159,7 +178,8 @@
 
     <div class="terminal-container">
         <div id="terminal-log">
-            > SISTEMA OPERACIONAL NEXUS <br>
+            > NEXUS SECURITY OS <br>
+            > CAMERA SYSTEM: <span id="camera-status">A CARREGAR...</span> <br>
             > AGUARDANDO AUTENTICAÇÃO...
         </div>
         <div class="input-area">
@@ -169,10 +189,10 @@
     </div>
 
     <div class="panel">
-        <h2>SECURITY</h2>
-        <div id="face-scanner">
+        <h2>SECURITY SCAN</h2>
+        <div id="camera-container">
             <div class="scanning-line" id="scanner-line"></div>
-            <span id="scan-status" style="font-size: 0.6rem;">SENSOR OFF</span>
+            <video id="webcam-view" autoplay playsinline></video>
         </div>
         <div id="lock-ui" style="color: red; text-align: center; margin-top: 10px;">🔒 LOCKED</div>
         <div id="user-display" style="font-size: 0.6rem;"></div>
@@ -189,6 +209,23 @@
     let currentUser = null;
     let loginMethod = '';
 
+    // FUNÇÃO PARA LIGAR A CÂMERA
+    async function setupCamera() {
+        const video = document.getElementById('webcam-view');
+        const status = document.getElementById('camera-status');
+        
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            status.innerText = "ONLINE";
+            status.style.color = "var(--primary-green)";
+        } catch (err) {
+            console.error("Erro ao aceder à câmara: ", err);
+            status.innerText = "ERRO (SEM PERMISSÃO)";
+            status.style.color = "red";
+        }
+    }
+
     function openModal(type) {
         document.getElementById('modal-overlay').style.display = 'flex';
         document.getElementById('step-card').style.display = type === 'CARD' ? 'block' : 'none';
@@ -202,14 +239,12 @@
 
     function checkManualID() {
         const inputVal = document.getElementById('manual-id-input').value.trim().toUpperCase();
-        
         if (USERS[inputVal]) {
             currentUser = USERS[inputVal];
             currentUser.idCod = inputVal;
             loginMethod = 'MANUAL';
-            
-            closeModal(); // Fecha a janela de digitação
-            startFaceScan(); // Começa o scan direto
+            closeModal();
+            startFaceScan();
         } else {
             alert("ID INVÁLIDO");
         }
@@ -219,29 +254,24 @@
         currentUser = USERS[id];
         currentUser.idCod = id;
         loginMethod = method;
-
         document.getElementById('step-card').style.display = 'none';
         document.getElementById('step-confirm-card').style.display = 'block';
-
-        document.getElementById('employee-data-card').innerHTML = `
-            NOME: ${currentUser.nome}<br>
-            CARGO: ${currentUser.cargo}<br>
-            NÍVEL: ${currentUser.nv}
-        `;
+        document.getElementById('employee-data-card').innerHTML = `NOME: ${currentUser.nome}<br>CARGO: ${currentUser.cargo}<br>NÍVEL: ${currentUser.nv}`;
     }
 
     function startFaceScan() {
         const log = document.getElementById('terminal-log');
         log.innerHTML += `<br>> ID VALIDADO: ${currentUser.idCod}`;
-        log.innerHTML += `<br>> INICIANDO FACE SCAN OBRIGATÓRIO...`;
+        log.innerHTML += `<br>> ANALISANDO BIOMETRIA FACIAL...`;
 
         document.getElementById('scanner-line').style.display = 'block';
-        document.getElementById('scan-status').innerText = 'SCANNING...';
-        document.getElementById('scan-status').style.color = 'var(--primary-green)';
+        
+        // Remove o filtro cinza durante o scan para parecer mais real
+        document.getElementById('webcam-view').style.filter = "none";
 
         setTimeout(() => {
             document.getElementById('scanner-line').style.display = 'none';
-            document.getElementById('scan-status').innerText = 'FACE MATCH!';
+            document.getElementById('webcam-view').style.filter = "grayscale(1) contrast(1.2) brightness(0.8)";
             finalize();
         }, 3000);
     }
@@ -254,10 +284,7 @@
     function finalize() {
         document.getElementById('lock-ui').innerHTML = "🔓 UNLOCKED";
         document.getElementById('lock-ui').style.color = "#00ff41";
-        document.getElementById('user-display').innerHTML = `
-            BEM-VINDO, ${currentUser.nome}<br>
-            SISTEMA LIBERADO (NV ${currentUser.nv})
-        `;
+        document.getElementById('user-display').innerHTML = `BEM-VINDO, ${currentUser.nome}<br>SISTEMA LIBERADO (NV ${currentUser.nv})`;
         document.getElementById('terminal-log').innerHTML += `<br>> ACESSO CONCEDIDO PARA ${currentUser.nome}.`;
         
         const history = document.getElementById('history-log');

@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+    <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -74,10 +75,11 @@
             cursor: pointer;
             font-weight: bold;
             width: 85%;
+            margin-bottom: 10px;
         }
 
-        /* --- MODAL DE CARTÕES --- */
-        #modal-cartoes {
+        /* --- MODAL (TUDO NA MESMA ABA) --- */
+        #modal-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -85,86 +87,110 @@
             z-index: 100;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
+        }
+
+        .modal-content {
+            background: #111;
+            border: 2px solid var(--primary-green);
+            padding: 30px;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.1);
         }
 
         .card-selection {
             display: flex;
-            gap: 20px;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
             margin-top: 20px;
         }
 
         .card-item {
-            border: 2px solid var(--primary-green);
-            padding: 20px;
-            width: 160px;
-            text-align: center;
+            border: 1px solid var(--primary-green);
+            padding: 15px;
             cursor: pointer;
-            transition: 0.3s;
-            background: #111;
+            width: 120px;
+            transition: 0.2s;
         }
 
-        .card-item:hover {
-            background: var(--primary-green);
-            color: black;
-            transform: scale(1.05);
+        .card-item:hover { background: var(--primary-green); color: black; }
+
+        /* Ficha de Dados */
+        .data-sheet {
+            text-align: left;
+            margin: 25px 0;
+            padding: 20px;
+            border: 1px dashed var(--primary-green);
+            background: #050505;
         }
 
-        .card-item span { display: block; font-size: 0.6rem; margin-top: 5px; opacity: 0.8; }
+        .data-line { margin-bottom: 10px; font-size: 1rem; }
+        .label { color: #666; font-size: 0.7rem; display: block; margin-bottom: 2px; }
+
+        /* Scanner */
+        #face-scanner {
+            width: 100%; height: 150px; border: 1px solid #333;
+            display: flex; align-items: center; justify-content: center;
+            position: relative; background: #050505; overflow: hidden;
+        }
+        .scanning-line {
+            width: 100%; height: 2px; background: var(--primary-green);
+            position: absolute; top: 0; animation: scan 2s infinite linear;
+            display: none; box-shadow: 0 0 10px var(--primary-green);
+        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
     </style>
 </head>
 <body>
 
-<div id="modal-cartoes">
-    <h2 style="color: var(--primary-green); border: none;">APROXIME O CARTÃO NO LEITOR</h2>
-    <div class="card-selection">
-        <div class="card-item" onclick="accessSystem('ID-HT-1020')">
-            <strong>NV 1</strong>
-            <div>HEITOR</div>
-            <span>ID: HT-1020</span>
+<div id="modal-overlay">
+    <div id="step-selection" class="modal-content">
+        <h2>LEITOR DE CARTÃO</h2>
+        <p style="font-size: 0.7rem; color: #666;">APROXIME UM CARTÃO DO SENSOR</p>
+        <div class="card-selection">
+            <div class="card-item" onclick="showData('ID-HT-1020')">NV 1<br>HEITOR</div>
+            <div class="card-item" onclick="showData('ID-BS-2030')">NV 2<br>BEATRIZ</div>
+            <div class="card-item" onclick="showData('ID-RR-3040')">NV 3<br>RICARDO</div>
         </div>
-        <div class="card-item" onclick="accessSystem('ID-BS-2030')">
-            <strong>NV 2</strong>
-            <div>BEATRIZ</div>
-            <span>ID: BS-2030</span>
-        </div>
-        <div class="card-item" onclick="accessSystem('ID-RR-3040')">
-            <strong>NV 3</strong>
-            <div>RICARDO</div>
-            <span>ID: RR-3040</span>
-        </div>
+        <button onclick="closeAll()" style="background: #333; color: #999; margin-top: 20px; width: 50%;">SAIR</button>
     </div>
-    <button onclick="closeModal()" style="width: auto; margin-top: 30px; background: #333; color: #999;">VOLTAR</button>
+
+    <div id="step-data" class="modal-content" style="display: none;">
+        <h2 style="color: var(--primary-green)">VERIFICAÇÃO DE PERFIL</h2>
+        <div id="employee-info" class="data-sheet">
+            </div>
+        <button id="btn-confirm" onclick="startFinalAuth()">🔓 CONFIRMAR IDENTIDADE</button>
+        <button onclick="backToSelection()" style="background: #333; color: #999; width: 50%;">VOLTAR</button>
+    </div>
 </div>
 
 <div class="main-container">
     <div class="panel">
-        <div>
-            <h2>SYSTEM STATUS</h2>
-            <div style="font-size: 0.7rem; margin-top:10px;">ENCRYPTION: <span style="color:var(--primary-green)">ACTIVE</span></div>
-        </div>
-        <div>
-            <h2>ACCESS LOGS</h2>
-            <div id="access-history" style="font-size: 0.65rem;"></div>
-        </div>
+        <h2>SYSTEM STATUS</h2>
+        <div style="font-size: 0.7rem; margin-top:10px;">ENCRYPTION: <span style="color:var(--primary-green)">ACTIVE</span></div>
+        <div id="access-history" style="font-size: 0.65rem; margin-top: 20px;"></div>
     </div>
 
     <div class="terminal-container">
         <div id="terminal-log">
-            > NEXUS SECURITY ASSISTANT v2.0 <br>
-            > AGUARDANDO AUTENTICAÇÃO...
+            > NEXUS SECURITY ASSISTANT v2.5 <br>
+            > STATUS: AGUARDANDO AUTENTICAÇÃO...
         </div>
         <div class="input-area">
-            <button onclick="openModal()">💳 LER CARTÃO</button>
+            <button onclick="openInterface()">💳 ACESSAR LEITOR</button>
         </div>
     </div>
 
     <div class="panel">
-        <div>
-            <h2>SECURITY</h2>
-            <div style="font-size: 2rem; text-align: center; margin-top: 20px;">🔒</div>
-            <div style="text-align: center; font-size: 0.7rem; color: red;">SISTEMA BLOQUEADO</div>
+        <h2>SECURITY</h2>
+        <div id="face-scanner">
+            <div class="scanning-line" id="scanner-line"></div>
+            <span id="scan-text" style="font-size: 0.6rem;">OFFLINE</span>
         </div>
+        <div id="lock-status" style="color: red; text-align: center; margin-top: 15px; font-weight: bold;">🔒 LOCKED</div>
+        <div id="final-user-data" style="font-size: 0.7rem; line-height: 1.5;"></div>
     </div>
 </div>
 
@@ -175,68 +201,69 @@
         "ID-RR-3040": { nome: "RICARDO ROCHA", cargo: "CHEFE", id: "RR-3040", nivel: "3" }
     };
 
-    function openModal() { document.getElementById('modal-cartoes').style.display = 'flex'; }
-    function closeModal() { document.getElementById('modal-cartoes').style.display = 'none'; }
+    let selectedUser = null;
 
-    function accessSystem(userId) {
-        const user = USERS[userId];
-        closeModal();
-        
-        // 1. Adiciona log no terminal principal
-        const log = document.getElementById('terminal-log');
-        log.innerHTML += `<br>> ACESSO SOLICITADO POR: ${user.id}`;
-        log.innerHTML += `<br>> REDIRECIONANDO PARA DASHBOARD PRIVADO...`;
+    function openInterface() {
+        document.getElementById('modal-overlay').style.display = 'flex';
+        document.getElementById('step-selection').style.display = 'block';
+        document.getElementById('step-data').style.display = 'none';
+    }
 
-        // 2. Abre nova aba com os dados
-        const novaAba = window.open('', '_blank');
+    function closeAll() {
+        document.getElementById('modal-overlay').style.display = 'none';
+    }
+
+    function showData(userId) {
+        selectedUser = USERS[userId];
+        // Esconde a seleção e mostra os dados na mesma caixa
+        document.getElementById('step-selection').style.display = 'none';
+        document.getElementById('step-data').style.display = 'block';
         
-        // Conteúdo da nova aba
-        const htmlConteudo = `
-            <html>
-            <head>
-                <title>PERFIL: ${user.nome}</title>
-                <style>
-                    body { 
-                        background: #0a0a0a; 
-                        color: #00ff41; 
-                        font-family: 'Courier New', monospace; 
-                        display: flex; 
-                        justify-content: center; 
-                        align-items: center; 
-                        height: 100vh; 
-                        margin: 0;
-                        text-transform: uppercase;
-                    }
-                    .box { 
-                        border: 2px solid #00ff41; 
-                        padding: 40px; 
-                        background: #111; 
-                        box-shadow: 0 0 20px rgba(0,255,65,0.2);
-                        min-width: 300px;
-                    }
-                    h1 { border-bottom: 1px solid #00ff41; padding-bottom: 10px; font-size: 1.2rem; }
-                    .info { margin: 15px 0; font-size: 0.9rem; }
-                    .label { color: #666; font-size: 0.7rem; display: block; }
-                </style>
-            </head>
-            <body>
-                <div class="box">
-                    <h1>DADOS DO FUNCIONÁRIO</h1>
-                    <div class="info"><span class="label">NOME COMPLETO:</span> ${user.nome}</div>
-                    <div class="info"><span class="label">CARGO:</span> ${user.cargo}</div>
-                    <div class="info"><span class="label">ID DE ACESSO:</span> ${user.id}</div>
-                    <div class="info"><span class="label">NÍVEL DE SEGURANÇA:</span> 0${user.nivel}</div>
-                    <div style="margin-top: 20px; font-size: 0.6rem; color: #00ff41; border-top: 1px solid #222; pt-10">
-                        AUTENTICADO VIA NEXUS SECURITY
-                    </div>
-                </div>
-            </body>
-            </html>
+        document.getElementById('employee-info').innerHTML = `
+            <div class="data-line"><span class="label">NOME DO FUNCIONÁRIO:</span> ${selectedUser.nome}</div>
+            <div class="data-line"><span class="label">CARGO:</span> ${selectedUser.cargo}</div>
+            <div class="data-line"><span class="label">ID DE REGISTRO:</span> ${selectedUser.id}</div>
+            <div class="data-line"><span class="label">NÍVEL DE ACESSO:</span> 0${selectedUser.nivel}</div>
         `;
+    }
 
-        novaAba.document.write(htmlConteudo);
-        novaAba.document.close();
+    function backToSelection() {
+        document.getElementById('step-data').style.display = 'none';
+        document.getElementById('step-selection').style.display = 'block';
+    }
+
+    function startFinalAuth() {
+        closeAll();
+        const log = document.getElementById('terminal-log');
+        log.innerHTML += `<br>> DADOS CONFIRMADOS PARA ${selectedUser.id}`;
+        log.innerHTML += `<br>> INICIANDO RECONHECIMENTO FACIAL...`;
+        
+        // Ativa o scanner visual no painel lateral
+        document.getElementById('scanner-line').style.display = 'block';
+        document.getElementById('scan-text').innerText = 'SCANNING...';
+        
+        setTimeout(() => {
+            document.getElementById('scanner-line').style.display = 'none';
+            document.getElementById('scan-text').innerText = 'CONFIRMADO';
+            document.getElementById('lock-status').innerHTML = "🔓 UNLOCKED";
+            document.getElementById('lock-status').style.color = "var(--primary-green)";
+            
+            document.getElementById('final-user-data').innerHTML = `
+                <hr style="border:0; border-top:1px solid #222; margin:10px 0;">
+                USUÁRIO: ${selectedUser.nome}<br>
+                CARGO: ${selectedUser.cargo}<br>
+                ACESSO NÍVEL 0${selectedUser.nivel} ATIVO.
+            `;
+            
+            log.innerHTML += `<br>> ACESSO CONCEDIDO. BEM-VINDO.`;
+
+            // Adiciona ao log histórico da esquerda
+            const history = document.getElementById('access-history');
+            history.innerHTML = `[${new Date().toLocaleTimeString()}] ${selectedUser.id} OK<br>` + history.innerHTML;
+        }, 2000);
     }
 </script>
 </body>
 </html>
+
+    

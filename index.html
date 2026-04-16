@@ -128,6 +128,7 @@
             object-fit: cover;
             filter: grayscale(1) brightness(0.7);
             transform: scaleX(-1);
+            display: none; /* Começa escondida */
         }
 
         .scanning-line {
@@ -154,7 +155,7 @@
         }
     </style>
 </head>
-<body onload="setupCamera()">
+<body>
 
 <div id="modal-overlay">
     <div id="step-card" class="modal-content" style="display: none;">
@@ -176,7 +177,7 @@
         <h2 id="confirm-type-title">VERIFICAÇÃO</h2>
         <div id="employee-data-display" class="data-sheet"></div>
         <button id="final-btn" onclick="executeAuth()">ENTRAR NO SISTEMA</button>
-        <button id="scan-init-btn" onclick="triggerFaceScanUI()" style="display:none;">INICIAR FACE SCAN</button>
+        <button id="scan-init-btn" onclick="triggerFaceScanUI()">INICIAR FACE SCAN</button>
     </div>
 </div>
 
@@ -184,12 +185,13 @@
     <div class="panel">
         <h2>SYSTEM</h2>
         <div id="history-log" style="font-size: 0.6rem;"></div>
-        <div id="idle-warning" style="font-size: 0.5rem; color: #555; margin-top: auto;">AUTO-LOGOFF: 2M INATIVO</div>
+        <div id="idle-warning" style="font-size: 0.5rem; color: #555; margin-top: auto;">SISTEMA DE VIGILÂNCIA</div>
     </div>
 
     <div class="terminal-container">
         <div id="terminal-log">
             > NEXUS SECURITY OS <br>
+            > CÂMERA: <span id="cam-status-text" style="color:red">OFFLINE</span><br>
             > AGUARDANDO COMANDO...
         </div>
         <div class="input-area" id="main-controls">
@@ -203,6 +205,7 @@
         <div id="camera-container">
             <div class="scanning-line" id="scanner-line"></div>
             <video id="webcam-view" autoplay playsinline></video>
+            <div id="cam-placeholder" style="color:#222; font-size: 0.6rem;">[ SENSOR DESATIVADO ]</div>
         </div>
         
         <div id="sim-controls">
@@ -227,27 +230,53 @@
     let currentUser = null;
     let loginMethod = '';
     let idleTimer;
+    let camStream = null;
 
-    async function setupCamera() {
+    // Ligar Câmera
+    async function startCamera() {
         const video = document.getElementById('webcam-view');
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
-        } catch (err) { console.error("Câmera indisponível."); }
-    }
+        const placeholder = document.getElementById('cam-placeholder');
+        const camStatus = document.getElementById('cam-status-text');
+        
+        if (camStream) return; // Já está ligada
 
-    // Monitor de Inatividade
-    function resetIdleTimer() {
-        clearTimeout(idleTimer);
-        if (currentUser) {
-            idleTimer = setTimeout(logout, 120000); // 120000ms = 2 minutos
+        try {
+            camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = camStream;
+            video.style.display = 'block';
+            placeholder.style.display = 'none';
+            camStatus.innerText = "ONLINE";
+            camStatus.style.color = "var(--primary-green)";
+        } catch (err) {
+            console.error("Câmera bloqueada.");
+            camStatus.innerText = "ERRO";
         }
     }
 
-    // Eventos para detectar atividade
-    window.onload = resetIdleTimer;
+    // Desligar Câmera
+    function stopCamera() {
+        const video = document.getElementById('webcam-view');
+        const placeholder = document.getElementById('cam-placeholder');
+        const camStatus = document.getElementById('cam-status-text');
+
+        if (camStream) {
+            camStream.getTracks().forEach(track => track.stop());
+            camStream = null;
+        }
+        video.style.display = 'none';
+        placeholder.style.display = 'block';
+        camStatus.innerText = "OFFLINE";
+        camStatus.style.color = "red";
+    }
+
+    function resetIdleTimer() {
+        clearTimeout(idleTimer);
+        if (currentUser) {
+            idleTimer = setTimeout(logout, 120000); // 2 minutos
+        }
+    }
+
     window.onmousemove = resetIdleTimer;
-    window.onmousedown = resetIdleTimer;
     window.onclick = resetIdleTimer;
     window.onkeydown = resetIdleTimer;
 
@@ -262,40 +291,34 @@
 
     function checkManualID() {
         const val = document.getElementById('manual-id-input').value.trim().toUpperCase();
-        if (USERS[val]) {
-            showConfirmation(val, 'MANUAL');
-        } else { alert("ID INVÁLIDO"); }
+        if (USERS[val]) { showConfirmation(val, 'MANUAL'); } 
+        else { alert("ID INVÁLIDO"); }
     }
 
-    function processLogin(id, method) {
-        showConfirmation(id, 'CARD');
-    }
+    function processLogin(id, method) { showConfirmation(id, 'CARD'); }
 
     function showConfirmation(id, method) {
         currentUser = USERS[id];
         loginMethod = method;
-        
         document.getElementById('step-card').style.display = 'none';
         document.getElementById('step-manual').style.display = 'none';
         document.getElementById('step-confirm').style.display = 'block';
-        
-        document.getElementById('confirm-type-title').innerText = method === 'CARD' ? "DADOS DO CARTÃO" : "ID RECONHECIDO";
         
         document.getElementById('employee-data-display').innerHTML = `
             NOME: ${currentUser.nome}<br>
             CARGO: ${currentUser.cargo}<br>
             ID: ${currentUser.id}<br>
-            NÍVEL DE ACESSO: ${currentUser.nv}
+            NÍVEL: ${currentUser.nv}
         `;
 
-        // Se for Manual, mostra o botão de Scan. Se for Card, mostra Entrar.
         document.getElementById('final-btn').style.display = method === 'CARD' ? 'inline-block' : 'none';
         document.getElementById('scan-init-btn').style.display = method === 'MANUAL' ? 'inline-block' : 'none';
     }
 
     function triggerFaceScanUI() {
         closeModal();
-        document.getElementById('terminal-log').innerHTML += `<br>> AGUARDANDO SCAN FACIAL...`;
+        startCamera(); // Liga a câmera apenas para o scan
+        document.getElementById('terminal-log').innerHTML += `<br>> SENSOR ATIVADO. ANALISANDO...`;
         document.getElementById('scanner-line').style.display = 'block';
         document.getElementById('sim-controls').style.display = 'flex';
         document.getElementById('webcam-view').style.filter = "none";
@@ -304,42 +327,45 @@
     function simulateResult(isCorrect) {
         document.getElementById('scanner-line').style.display = 'none';
         document.getElementById('sim-controls').style.display = 'none';
-        document.getElementById('webcam-view').style.filter = "grayscale(1) brightness(0.7)";
-
-        if (isCorrect) { finalize(); } 
-        else {
-            document.getElementById('terminal-log').innerHTML += `<br><span style="color:red">> ACESSO NEGADO: BIOMETRIA INCORRETA</span>`;
+        
+        if (isCorrect) { 
+            finalize(); 
+        } else {
+            document.getElementById('terminal-log').innerHTML += `<br><span style="color:red">> ERRO BIOMÉTRICO.</span>`;
             document.getElementById('lock-ui').innerText = "❌ DENIED";
+            stopCamera(); // Desliga se falhar
             setTimeout(() => { document.getElementById('lock-ui').innerText = "🔒 LOCKED"; }, 2000);
         }
     }
 
-    function executeAuth() { closeModal(); finalize(); }
+    function executeAuth() { 
+        closeModal(); 
+        startCamera(); // Liga a câmera após o login por cartão
+        finalize(); 
+    }
 
     function finalize() {
         document.getElementById('lock-ui').innerHTML = "🔓 UNLOCKED";
         document.getElementById('lock-ui').style.color = "var(--primary-green)";
         document.getElementById('user-display').innerHTML = `
-            USUÁRIO: ${currentUser.nome}<br>
-            CARGO: ${currentUser.cargo}<br>
+            PERFIL: ${currentUser.nome}<br>
             ID: ${currentUser.id}<br>
             NÍVEL: ${currentUser.nv}
         `;
-        document.getElementById('terminal-log').innerHTML += `<br>> SESSÃO INICIADA: ${currentUser.nome}`;
+        document.getElementById('webcam-view').style.filter = "grayscale(1) brightness(0.7)";
         document.getElementById('btn-logoff').style.display = 'block';
+        document.getElementById('terminal-log').innerHTML += `<br>> ACESSO LIBERADO. MONITORAMENTO ATIVO.`;
         
         const history = document.getElementById('history-log');
         history.innerHTML = `[${new Date().toLocaleTimeString()}] ${currentUser.id} IN<br>` + history.innerHTML;
-        
         resetIdleTimer();
     }
 
     function logout() {
         if(!currentUser) return;
+        document.getElementById('terminal-log').innerHTML += `<br>> LOGOFF: SENSOR DE VÍDEO DESATIVADO.`;
         
-        document.getElementById('terminal-log').innerHTML += `<br>> SESSÃO ENCERRADA PARA ${currentUser.nome}`;
-        const history = document.getElementById('history-log');
-        history.innerHTML = `[${new Date().toLocaleTimeString()}] ${currentUser.id} OUT<br>` + history.innerHTML;
+        stopCamera(); // Desliga a câmera no logoff
 
         currentUser = null;
         document.getElementById('lock-ui').innerHTML = "🔒 LOCKED";

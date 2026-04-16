@@ -40,7 +40,7 @@
             padding: 15px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
         }
 
         h2 { font-size: 0.8rem; border-bottom: 1px solid #333; padding-bottom: 5px; margin: 0; }
@@ -77,6 +77,7 @@
             margin-bottom: 10px;
             font-weight: bold;
             text-transform: uppercase;
+            font-size: 0.7rem;
         }
 
         button:hover { background: var(--primary-green); color: black; }
@@ -113,7 +114,7 @@
             outline: none;
         }
 
-        /* CAMERA / SCANNER */
+        /* CAMERA */
         #camera-container {
             width: 100%; height: 150px;
             border: 1px solid #222;
@@ -128,7 +129,7 @@
             object-fit: cover;
             filter: grayscale(1) brightness(0.7);
             transform: scaleX(-1);
-            display: none; /* Começa escondida */
+            display: none;
         }
 
         .scanning-line {
@@ -151,8 +152,13 @@
             border: 1px dashed var(--primary-green);
             padding: 10px;
             margin-bottom: 15px;
-            line-height: 1.4;
         }
+
+        /* ADMIN PANEL */
+        #admin-panel { display: none; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; }
+        .admin-btn { font-size: 0.6rem; padding: 5px; width: 100%; margin-bottom: 5px; border-color: #555; color: #555; }
+        .active-card { color: var(--primary-green); border-color: var(--primary-green); }
+        .disabled-card { color: var(--error-red); border-color: var(--error-red); }
     </style>
 </head>
 <body>
@@ -184,14 +190,19 @@
 <div class="main-container">
     <div class="panel">
         <h2>SYSTEM</h2>
-        <div id="history-log" style="font-size: 0.6rem;"></div>
-        <div id="idle-warning" style="font-size: 0.5rem; color: #555; margin-top: auto;">SISTEMA DE VIGILÂNCIA</div>
+        <div id="history-log" style="font-size: 0.55rem; overflow-y: auto; max-height: 200px;"></div>
+        
+        <div id="admin-panel">
+            <h2 style="font-size: 0.6rem; color: #555; margin-bottom: 10px;">GESTÃO DE CARTÕES</h2>
+            <button id="adm-ht" class="admin-btn" onclick="toggleCard('ID-HT-1020')">HT-1020: ATIVO</button>
+            <button id="adm-bs" class="admin-btn" onclick="toggleCard('ID-BS-2030')">BS-2030: ATIVO</button>
+            <button id="adm-rr" class="admin-btn" onclick="toggleCard('ID-RR-3040')">RR-3040: ATIVO</button>
+        </div>
     </div>
 
     <div class="terminal-container">
         <div id="terminal-log">
             > NEXUS SECURITY OS <br>
-            > CÂMERA: <span id="cam-status-text" style="color:red">OFFLINE</span><br>
             > AGUARDANDO COMANDO...
         </div>
         <div class="input-area" id="main-controls">
@@ -205,7 +216,7 @@
         <div id="camera-container">
             <div class="scanning-line" id="scanner-line"></div>
             <video id="webcam-view" autoplay playsinline></video>
-            <div id="cam-placeholder" style="color:#222; font-size: 0.6rem;">[ SENSOR DESATIVADO ]</div>
+            <div id="cam-placeholder" style="color:#222; font-size: 0.6rem;">[ SENSOR OFF ]</div>
         </div>
         
         <div id="sim-controls">
@@ -222,63 +233,44 @@
 
 <script>
     const USERS = {
-        "ID-HT-1020": { nome: "HEITOR TORRES", cargo: "PRODUÇÃO", nv: "1", id: "ID-HT-1020" },
-        "ID-BS-2030": { nome: "BEATRIZ SOARES", cargo: "GERENTE", nv: "2", id: "ID-BS-2030" },
-        "ID-RR-3040": { nome: "RICARDO ROCHA", cargo: "CHEFE", nv: "3", id: "ID-RR-3040" }
+        "ID-HT-1020": { nome: "HEITOR TORRES", cargo: "PRODUÇÃO", nv: 1, id: "ID-HT-1020" },
+        "ID-BS-2030": { nome: "BEATRIZ SOARES", cargo: "GERENTE", nv: 2, id: "ID-BS-2030" },
+        "ID-RR-3040": { nome: "RICARDO ROCHA", cargo: "CHEFE", nv: 3, id: "ID-RR-3040" }
+    };
+
+    // Sistema de Status dos Cartões
+    let CARD_STATUS = {
+        "ID-HT-1020": true,
+        "ID-BS-2030": true,
+        "ID-RR-3040": true
     };
 
     let currentUser = null;
     let loginMethod = '';
-    let idleTimer;
     let camStream = null;
 
-    // Ligar Câmera
     async function startCamera() {
         const video = document.getElementById('webcam-view');
         const placeholder = document.getElementById('cam-placeholder');
-        const camStatus = document.getElementById('cam-status-text');
-        
-        if (camStream) return; // Já está ligada
-
+        if (camStream) return;
         try {
             camStream = await navigator.mediaDevices.getUserMedia({ video: true });
             video.srcObject = camStream;
             video.style.display = 'block';
             placeholder.style.display = 'none';
-            camStatus.innerText = "ONLINE";
-            camStatus.style.color = "var(--primary-green)";
-        } catch (err) {
-            console.error("Câmera bloqueada.");
-            camStatus.innerText = "ERRO";
-        }
+        } catch (err) { console.error("Sem câmera."); }
     }
 
-    // Desligar Câmera
     function stopCamera() {
         const video = document.getElementById('webcam-view');
         const placeholder = document.getElementById('cam-placeholder');
-        const camStatus = document.getElementById('cam-status-text');
-
         if (camStream) {
             camStream.getTracks().forEach(track => track.stop());
             camStream = null;
         }
         video.style.display = 'none';
         placeholder.style.display = 'block';
-        camStatus.innerText = "OFFLINE";
-        camStatus.style.color = "red";
     }
-
-    function resetIdleTimer() {
-        clearTimeout(idleTimer);
-        if (currentUser) {
-            idleTimer = setTimeout(logout, 120000); // 2 minutos
-        }
-    }
-
-    window.onmousemove = resetIdleTimer;
-    window.onclick = resetIdleTimer;
-    window.onkeydown = resetIdleTimer;
 
     function openModal(type) {
         document.getElementById('modal-overlay').style.display = 'flex';
@@ -289,13 +281,51 @@
 
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
+    function toggleCard(id) {
+        // Regras de permissão
+        if (currentUser.nv === 2 && id === "ID-RR-3040") {
+            alert("ERRO: GERENTES NÃO PODEM ALTERAR CARTÕES DE CHEFIA.");
+            return;
+        }
+        
+        CARD_STATUS[id] = !CARD_STATUS[id];
+        updateAdminPanel();
+        document.getElementById('terminal-log').innerHTML += `<br>> CARTÃO ${id} STATUS: ${CARD_STATUS[id] ? 'ATIVADO' : 'DESATIVADO'}`;
+    }
+
+    function updateAdminPanel() {
+        if (!currentUser || currentUser.nv < 2) return;
+        
+        const btnHt = document.getElementById('adm-ht');
+        const btnBs = document.getElementById('adm-bs');
+        const btnRr = document.getElementById('adm-rr');
+
+        btnHt.innerText = `HT-1020: ${CARD_STATUS["ID-HT-1020"] ? 'ATIVO' : 'DESATIVADO'}`;
+        btnHt.className = `admin-btn ${CARD_STATUS["ID-HT-1020"] ? 'active-card' : 'disabled-card'}`;
+
+        btnBs.innerText = `BS-2030: ${CARD_STATUS["ID-BS-2030"] ? 'ATIVO' : 'DESATIVADO'}`;
+        btnBs.className = `admin-btn ${CARD_STATUS["ID-BS-2030"] ? 'active-card' : 'disabled-card'}`;
+
+        btnRr.innerText = `RR-3040: ${CARD_STATUS["ID-RR-3040"] ? 'ATIVO' : 'DESATIVADO'}`;
+        btnRr.className = `admin-btn ${CARD_STATUS["ID-RR-3040"] ? 'active-card' : 'disabled-card'}`;
+    }
+
+    function processLogin(id, method) {
+        // VERIFICA SE O CARTÃO ESTÁ ATIVO
+        if (method === 'CARD' && !CARD_STATUS[id]) {
+            document.getElementById('terminal-log').innerHTML += `<br><span style="color:red">> ALERTA: CARTÃO ${id} FOI BLOQUEADO PELO SISTEMA!</span>`;
+            alert("ACESSO NEGADO: CARTÃO DESATIVADO.");
+            closeModal();
+            return;
+        }
+        showConfirmation(id, method);
+    }
+
     function checkManualID() {
         const val = document.getElementById('manual-id-input').value.trim().toUpperCase();
         if (USERS[val]) { showConfirmation(val, 'MANUAL'); } 
         else { alert("ID INVÁLIDO"); }
     }
-
-    function processLogin(id, method) { showConfirmation(id, 'CARD'); }
 
     function showConfirmation(id, method) {
         currentUser = USERS[id];
@@ -317,62 +347,48 @@
 
     function triggerFaceScanUI() {
         closeModal();
-        startCamera(); // Liga a câmera apenas para o scan
-        document.getElementById('terminal-log').innerHTML += `<br>> SENSOR ATIVADO. ANALISANDO...`;
+        startCamera();
         document.getElementById('scanner-line').style.display = 'block';
         document.getElementById('sim-controls').style.display = 'flex';
-        document.getElementById('webcam-view').style.filter = "none";
     }
 
     function simulateResult(isCorrect) {
         document.getElementById('scanner-line').style.display = 'none';
         document.getElementById('sim-controls').style.display = 'none';
-        
-        if (isCorrect) { 
-            finalize(); 
-        } else {
+        if (isCorrect) { finalize(); } 
+        else {
             document.getElementById('terminal-log').innerHTML += `<br><span style="color:red">> ERRO BIOMÉTRICO.</span>`;
-            document.getElementById('lock-ui').innerText = "❌ DENIED";
-            stopCamera(); // Desliga se falhar
-            setTimeout(() => { document.getElementById('lock-ui').innerText = "🔒 LOCKED"; }, 2000);
+            stopCamera();
         }
     }
 
-    function executeAuth() { 
-        closeModal(); 
-        startCamera(); // Liga a câmera após o login por cartão
-        finalize(); 
-    }
+    function executeAuth() { closeModal(); startCamera(); finalize(); }
 
     function finalize() {
         document.getElementById('lock-ui').innerHTML = "🔓 UNLOCKED";
         document.getElementById('lock-ui').style.color = "var(--primary-green)";
-        document.getElementById('user-display').innerHTML = `
-            PERFIL: ${currentUser.nome}<br>
-            ID: ${currentUser.id}<br>
-            NÍVEL: ${currentUser.nv}
-        `;
-        document.getElementById('webcam-view').style.filter = "grayscale(1) brightness(0.7)";
+        document.getElementById('user-display').innerHTML = `USUÁRIO: ${currentUser.nome}<br>ACESSO NÍVEL ${currentUser.nv}`;
         document.getElementById('btn-logoff').style.display = 'block';
-        document.getElementById('terminal-log').innerHTML += `<br>> ACESSO LIBERADO. MONITORAMENTO ATIVO.`;
         
+        // Ativar painel ADM se for Gerente ou Chefe
+        if (currentUser.nv >= 2) {
+            document.getElementById('admin-panel').style.display = 'block';
+            updateAdminPanel();
+        }
+
         const history = document.getElementById('history-log');
-        history.innerHTML = `[${new Date().toLocaleTimeString()}] ${currentUser.id} IN<br>` + history.innerHTML;
-        resetIdleTimer();
+        history.innerHTML = `[${new Date().toLocaleTimeString()}] ${currentUser.id} LOGIN<br>` + history.innerHTML;
     }
 
     function logout() {
         if(!currentUser) return;
-        document.getElementById('terminal-log').innerHTML += `<br>> LOGOFF: SENSOR DE VÍDEO DESATIVADO.`;
-        
-        stopCamera(); // Desliga a câmera no logoff
-
-        currentUser = null;
+        stopCamera();
+        document.getElementById('admin-panel').style.display = 'none';
         document.getElementById('lock-ui').innerHTML = "🔒 LOCKED";
         document.getElementById('lock-ui').style.color = "red";
         document.getElementById('user-display').innerHTML = "";
         document.getElementById('btn-logoff').style.display = 'none';
-        clearTimeout(idleTimer);
+        currentUser = null;
     }
 </script>
 </body>

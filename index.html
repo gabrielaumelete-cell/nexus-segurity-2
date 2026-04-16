@@ -78,6 +78,7 @@
             font-weight: bold;
             text-transform: uppercase;
             font-size: 0.7rem;
+            transition: 0.1s;
         }
 
         button:hover { background: var(--primary-green); color: black; }
@@ -164,7 +165,7 @@
 <body>
 
 <div id="modal-overlay">
-    <div id="step-card" class="modal-content" style="display: none;">
+    <div id="step-card" class="modal-content">
         <h2>LEITURA DE CARTÃO</h2>
         <button onclick="processLogin('ID-HT-1020', 'CARD')">HEITOR (NV 1)</button>
         <button onclick="processLogin('ID-BS-2030', 'CARD')">BEATRIZ (NV 2)</button>
@@ -172,14 +173,14 @@
         <button onclick="closeModal()" style="border:none; color: #555;">FECHAR</button>
     </div>
 
-    <div id="step-manual" class="modal-content" style="display: none;">
+    <div id="step-manual" class="modal-content">
         <h2>ACESSO VIA ID</h2>
         <input type="text" id="manual-id-input" placeholder="DIGITE O ID">
         <button onclick="checkManualID()">VALIDAR CREDENCIAIS</button>
         <button onclick="closeModal()" style="border:none; color: #555;">VOLTAR</button>
     </div>
 
-    <div id="step-confirm" class="modal-content" style="display: none;">
+    <div id="step-confirm" class="modal-content">
         <h2 id="confirm-type-title">VERIFICAÇÃO</h2>
         <div id="employee-data-display" class="data-sheet"></div>
         <button id="final-btn" onclick="executeAuth()">ENTRAR NO SISTEMA</button>
@@ -189,7 +190,7 @@
 
 <div class="main-container">
     <div class="panel">
-        <h2>SYSTEM</h2>
+        <h2>SYSTEM HISTORY</h2>
         <div id="history-log" style="font-size: 0.55rem; overflow-y: auto; max-height: 200px;"></div>
         
         <div id="admin-panel">
@@ -203,7 +204,7 @@
     <div class="terminal-container">
         <div id="terminal-log">
             > NEXUS SECURITY OS <br>
-            > AGUARDANDO COMANDO...
+            > AGUARDANDO AUTENTICAÇÃO...
         </div>
         <div class="input-area" id="main-controls">
             <button onclick="openModal('CARD')">💳 LER CARTÃO</button>
@@ -238,7 +239,6 @@
         "ID-RR-3040": { nome: "RICARDO ROCHA", cargo: "CHEFE", nv: 3, id: "ID-RR-3040" }
     };
 
-    // Sistema de Status dos Cartões
     let CARD_STATUS = {
         "ID-HT-1020": true,
         "ID-BS-2030": true,
@@ -246,8 +246,15 @@
     };
 
     let currentUser = null;
-    let loginMethod = '';
     let camStream = null;
+    let idleTimer;
+
+    function writeLog(msg, isError = false) {
+        const log = document.getElementById('terminal-log');
+        const color = isError ? 'var(--error-red)' : 'var(--primary-green)';
+        log.innerHTML += `<br><span style="color:${color}">> ${msg}</span>`;
+        log.scrollTop = log.scrollHeight;
+    }
 
     async function startCamera() {
         const video = document.getElementById('webcam-view');
@@ -258,7 +265,7 @@
             video.srcObject = camStream;
             video.style.display = 'block';
             placeholder.style.display = 'none';
-        } catch (err) { console.error("Sem câmera."); }
+        } catch (err) { writeLog("ERRO DE HARDWARE: CÂMERA NÃO DETECTADA", true); }
     }
 
     function stopCamera() {
@@ -282,39 +289,28 @@
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
     function toggleCard(id) {
-        // Regras de permissão
         if (currentUser.nv === 2 && id === "ID-RR-3040") {
-            alert("ERRO: GERENTES NÃO PODEM ALTERAR CARTÕES DE CHEFIA.");
+            writeLog("ERRO DE PERMISSÃO: NÍVEL INSUFICIENTE PARA ALTERAR CHEFIA", true);
             return;
         }
-        
         CARD_STATUS[id] = !CARD_STATUS[id];
         updateAdminPanel();
-        document.getElementById('terminal-log').innerHTML += `<br>> CARTÃO ${id} STATUS: ${CARD_STATUS[id] ? 'ATIVADO' : 'DESATIVADO'}`;
+        writeLog(`SISTEMA: CARTÃO ${id} ${CARD_STATUS[id] ? 'REATIVADO' : 'BLOQUEADO'}`);
     }
 
     function updateAdminPanel() {
         if (!currentUser || currentUser.nv < 2) return;
-        
-        const btnHt = document.getElementById('adm-ht');
-        const btnBs = document.getElementById('adm-bs');
-        const btnRr = document.getElementById('adm-rr');
-
-        btnHt.innerText = `HT-1020: ${CARD_STATUS["ID-HT-1020"] ? 'ATIVO' : 'DESATIVADO'}`;
-        btnHt.className = `admin-btn ${CARD_STATUS["ID-HT-1020"] ? 'active-card' : 'disabled-card'}`;
-
-        btnBs.innerText = `BS-2030: ${CARD_STATUS["ID-BS-2030"] ? 'ATIVO' : 'DESATIVADO'}`;
-        btnBs.className = `admin-btn ${CARD_STATUS["ID-BS-2030"] ? 'active-card' : 'disabled-card'}`;
-
-        btnRr.innerText = `RR-3040: ${CARD_STATUS["ID-RR-3040"] ? 'ATIVO' : 'DESATIVADO'}`;
-        btnRr.className = `admin-btn ${CARD_STATUS["ID-RR-3040"] ? 'active-card' : 'disabled-card'}`;
+        ['ID-HT-1020', 'ID-BS-2030', 'ID-RR-3040'].forEach(id => {
+            const shortId = id.split('-')[1].toLowerCase();
+            const btn = document.getElementById(`adm-${shortId}`);
+            btn.innerText = `${id.split('-')[1]}-${id.split('-')[2]}: ${CARD_STATUS[id] ? 'ATIVO' : 'DESL.'}`;
+            btn.className = `admin-btn ${CARD_STATUS[id] ? 'active-card' : 'disabled-card'}`;
+        });
     }
 
     function processLogin(id, method) {
-        // VERIFICA SE O CARTÃO ESTÁ ATIVO
         if (method === 'CARD' && !CARD_STATUS[id]) {
-            document.getElementById('terminal-log').innerHTML += `<br><span style="color:red">> ALERTA: CARTÃO ${id} FOI BLOQUEADO PELO SISTEMA!</span>`;
-            alert("ACESSO NEGADO: CARTÃO DESATIVADO.");
+            writeLog(`ALERTA: CARTÃO ${id} REJEITADO PELO FIREWALL!`, true);
             closeModal();
             return;
         }
@@ -323,13 +319,15 @@
 
     function checkManualID() {
         const val = document.getElementById('manual-id-input').value.trim().toUpperCase();
-        if (USERS[val]) { showConfirmation(val, 'MANUAL'); } 
-        else { alert("ID INVÁLIDO"); }
+        if (USERS[val]) { 
+            showConfirmation(val, 'MANUAL'); 
+        } else { 
+            writeLog(`ERRO: ID ${val} NÃO LOCALIZADO NO BANCO DE DADOS`, true);
+        }
     }
 
     function showConfirmation(id, method) {
         currentUser = USERS[id];
-        loginMethod = method;
         document.getElementById('step-card').style.display = 'none';
         document.getElementById('step-manual').style.display = 'none';
         document.getElementById('step-confirm').style.display = 'block';
@@ -348,17 +346,22 @@
     function triggerFaceScanUI() {
         closeModal();
         startCamera();
+        writeLog("INICIANDO SCAN BIOMÉTRICO...");
         document.getElementById('scanner-line').style.display = 'block';
         document.getElementById('sim-controls').style.display = 'flex';
+        document.getElementById('webcam-view').style.filter = "none";
     }
 
     function simulateResult(isCorrect) {
         document.getElementById('scanner-line').style.display = 'none';
         document.getElementById('sim-controls').style.display = 'none';
+        document.getElementById('webcam-view').style.filter = "grayscale(1) brightness(0.7)";
         if (isCorrect) { finalize(); } 
         else {
-            document.getElementById('terminal-log').innerHTML += `<br><span style="color:red">> ERRO BIOMÉTRICO.</span>`;
+            writeLog("CRITICAL ERROR: BIOMETRIA FACIAL NÃO CORRESPONDE!", true);
             stopCamera();
+            document.getElementById('lock-ui').innerText = "❌ DENIED";
+            setTimeout(() => { document.getElementById('lock-ui').innerText = "🔒 LOCKED"; }, 2000);
         }
     }
 
@@ -369,19 +372,19 @@
         document.getElementById('lock-ui').style.color = "var(--primary-green)";
         document.getElementById('user-display').innerHTML = `USUÁRIO: ${currentUser.nome}<br>ACESSO NÍVEL ${currentUser.nv}`;
         document.getElementById('btn-logoff').style.display = 'block';
-        
-        // Ativar painel ADM se for Gerente ou Chefe
         if (currentUser.nv >= 2) {
             document.getElementById('admin-panel').style.display = 'block';
             updateAdminPanel();
         }
-
+        writeLog(`ACESSO CONCEDIDO: BEM-VINDO ${currentUser.nome}`);
         const history = document.getElementById('history-log');
-        history.innerHTML = `[${new Date().toLocaleTimeString()}] ${currentUser.id} LOGIN<br>` + history.innerHTML;
+        history.innerHTML = `[${new Date().toLocaleTimeString()}] ${currentUser.id} IN<br>` + history.innerHTML;
+        resetIdleTimer();
     }
 
     function logout() {
         if(!currentUser) return;
+        writeLog("SESSÃO ENCERRADA PELO USUÁRIO.");
         stopCamera();
         document.getElementById('admin-panel').style.display = 'none';
         document.getElementById('lock-ui').innerHTML = "🔒 LOCKED";
@@ -389,7 +392,15 @@
         document.getElementById('user-display').innerHTML = "";
         document.getElementById('btn-logoff').style.display = 'none';
         currentUser = null;
+        clearTimeout(idleTimer);
     }
+
+    function resetIdleTimer() {
+        clearTimeout(idleTimer);
+        if (currentUser) idleTimer = setTimeout(() => { writeLog("LOGOFF AUTOMÁTICO: INATIVIDADE DETECTADA", true); logout(); }, 120000);
+    }
+    window.onmousemove = resetIdleTimer;
+    window.onkeydown = resetIdleTimer;
 </script>
 </body>
 </html>

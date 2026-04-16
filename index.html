@@ -99,7 +99,7 @@
             border: 1px solid var(--primary-green);
             padding: 30px;
             text-align: center;
-            width: 450px;
+            width: 500px; /* Aumentado para caber o chefe */
         }
 
         input {
@@ -134,23 +134,23 @@
         /* BANCO DE DADOS GESTÃO */
         .db-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            grid-template-columns: 1fr 1fr 1fr; /* Três colunas agora */
+            gap: 10px;
             margin-top: 15px;
         }
 
         .db-item {
             border: 1px solid #333;
-            padding: 10px;
-            font-size: 0.6rem;
+            padding: 8px;
+            font-size: 0.55rem;
             background: #050505;
         }
 
         .captured-photo {
             width: 100%;
-            height: 80px;
+            height: 70px;
             background: #222;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             object-fit: cover;
             border: 1px solid #444;
         }
@@ -159,7 +159,7 @@
             display: none;
             flex-direction: column;
             align-items: center;
-            margin-top: 10px;
+            margin-top: 15px;
             border-top: 1px solid #333;
             padding-top: 10px;
         }
@@ -180,20 +180,26 @@
         <div class="db-grid">
             <div class="db-item">
                 <img id="photo-ht" class="captured-photo" src="" style="display:none">
-                <div id="placeholder-ht" style="height:80px; line-height:80px; color:#222">[ SEM DADOS ]</div>
-                <button onclick="prepareCapture('ID-HT-1020')" style="width:100%; font-size:0.5rem">REGISTRAR FOTO</button>
-                HEITOR (HT-1020)
+                <div id="placeholder-ht" style="height:70px; line-height:70px; color:#222">[ SEM DADOS ]</div>
+                <button onclick="prepareCapture('ID-HT-1020')" style="width:100%; font-size:0.4rem">REGISTRAR</button>
+                HEITOR (NV 1)
             </div>
             <div class="db-item">
                 <img id="photo-bs" class="captured-photo" src="" style="display:none">
-                <div id="placeholder-bs" style="height:80px; line-height:80px; color:#222">[ SEM DADOS ]</div>
-                <button onclick="prepareCapture('ID-BS-2030')" style="width:100%; font-size:0.5rem">REGISTRAR FOTO</button>
-                BEATRIZ (BS-2030)
+                <div id="placeholder-bs" style="height:70px; line-height:70px; color:#222">[ SEM DADOS ]</div>
+                <button onclick="prepareCapture('ID-BS-2030')" style="width:100%; font-size:0.4rem">REGISTRAR</button>
+                BEATRIZ (NV 2)
+            </div>
+            <div class="db-item">
+                <img id="photo-rr" class="captured-photo" src="" style="display:none">
+                <div id="placeholder-rr" style="height:70px; line-height:70px; color:#222">[ SEM DADOS ]</div>
+                <button onclick="prepareCapture('ID-RR-3040')" style="width:100%; font-size:0.4rem">REGISTRAR</button>
+                RICARDO (NV 3)
             </div>
         </div>
 
         <div id="capture-zone">
-            <div style="width:200px; height:150px; border:1px solid var(--primary-green); overflow:hidden">
+            <div style="width:200px; height:130px; border:1px solid var(--primary-green); overflow:hidden">
                 <video id="db-webcam" autoplay playsinline style="width:100%; height:100%; object-fit:cover; transform: scaleX(-1);"></video>
             </div>
             <button onclick="takeSnapshot()" style="margin-top:10px; background:var(--primary-green); color:black">SALVAR REGISTRO</button>
@@ -205,13 +211,13 @@
         <h2>LEITORA DE CARTÃO</h2>
         <button onclick="processLogin('ID-HT-1020')">ID-HT-1020 (HEITOR)</button>
         <button onclick="processLogin('ID-BS-2030')">ID-BS-2030 (BEATRIZ)</button>
+        <button onclick="processLogin('ID-RR-3040')">ID-RR-3040 (RICARDO)</button>
         <button onclick="closeModal()" style="border:none; color:#555">CANCELAR</button>
     </div>
 
     <div id="step-id-manual" class="modal-content" style="display: none;">
         <h2>TERMINAL DE ID</h2>
-        <p style="font-size: 0.6rem;">DIGITE O CÓDIGO DO FUNCIONÁRIO</p>
-        <input type="text" id="input-manual-id" placeholder="EX: ID-HT-1020">
+        <input type="text" id="input-manual-id" placeholder="EX: ID-RR-3040">
         <button onclick="checkManualID()">PESQUISAR ID</button>
         <button onclick="closeModal()" style="border:none; color:#555">VOLTAR</button>
     </div>
@@ -226,12 +232,12 @@
 
 <div class="main-container">
     <div class="panel">
-        <h2>RELOG</h2>
+        <h2>LOG DE ACESSOS</h2>
         <div id="history-log" style="font-size: 0.5rem;"></div>
     </div>
 
     <div class="terminal-container">
-        <div id="terminal-log">> AGUARDANDO COMANDO...</div>
+        <div id="terminal-log">> SISTEMA ONLINE...</div>
         <div class="input-area">
             <button onclick="openModal('CARD')">💳 CARTÃO</button>
             <button onclick="openModal('ID')">⌨️ DIGITAR ID</button>
@@ -250,7 +256,7 @@
             <button onclick="logout()" class="btn-error" style="width:48%">RECUSAR</button>
         </div>
         <div id="lock-ui" style="color:red; text-align:center; margin-top:10px">🔒 SISTEMA TRANCADO</div>
-        <button id="btn-logoff" onclick="logout()" style="display:none; margin-top:auto">ENCERRAR SESSÃO</button>
+        <button id="btn-logoff" onclick="logout()" style="display:none; margin-top:auto">LOGOFF</button>
     </div>
 </div>
 
@@ -263,7 +269,8 @@
 
     const USERS = {
         "ID-HT-1020": { nome: "HEITOR TORRES", key: "ht" },
-        "ID-BS-2030": { nome: "BEATRIZ SOARES", key: "bs" }
+        "ID-BS-2030": { nome: "BEATRIZ SOARES", key: "bs" },
+        "ID-RR-3040": { nome: "RICARDO ROCHA", key: "rr" }
     };
 
     function writeLog(msg, isError = false) {
@@ -272,9 +279,8 @@
         log.scrollTop = log.scrollHeight;
     }
 
-    // Carrega fotos ao iniciar
     window.onload = () => {
-        ['ht', 'bs'].forEach(key => {
+        ['ht', 'bs', 'rr'].forEach(key => {
             const saved = localStorage.getItem('photo-' + key);
             if(saved) {
                 document.getElementById('photo-' + key).src = saved;
@@ -311,11 +317,8 @@
 
     function checkManualID() {
         const id = document.getElementById('input-manual-id').value.toUpperCase().trim();
-        if (USERS[id]) {
-            processLogin(id);
-        } else {
-            writeLog("ID NÃO ENCONTRADO NO BANCO.", true);
-        }
+        if (USERS[id]) processLogin(id);
+        else writeLog("ID NÃO ENCONTRADO.", true);
     }
 
     function processLogin(id) {
@@ -324,7 +327,7 @@
         document.getElementById('step-card').style.display = 'none';
         document.getElementById('step-id-manual').style.display = 'none';
         document.getElementById('step-confirm').style.display = 'block';
-        document.getElementById('employee-data-display').innerHTML = `FUNCIONÁRIO: ${currentUser.nome}<br>REGISTRO: ${currentUser.id}<br>STATUS: AGUARDANDO SCAN`;
+        document.getElementById('employee-data-display').innerHTML = `FUNCIONÁRIO: ${currentUser.nome}<br>REGISTRO: ${currentUser.id}<br>CARGO: CHEFIA/OPERACIONAL`;
     }
 
     async function triggerFaceScanUI() {
@@ -340,10 +343,9 @@
         mainVid.style.display = 'block';
         document.getElementById('cam-placeholder').style.display = 'none';
         document.getElementById('sim-controls').style.display = 'flex';
-        writeLog(`IA: COMPARANDO SCAN COM REGISTRO ${currentUser.id}...`);
+        writeLog(`IA: VALIDANDO IMAGEM DE ${currentUser.nome}...`);
     }
 
-    // Funções de Captura do DB
     async function prepareCapture(id) {
         targetId = id;
         document.getElementById('capture-zone').style.display = 'flex';

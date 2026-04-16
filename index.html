@@ -1,40 +1,119 @@
-<!DOCTYPE html>
+                <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS - Terminal de Segurança</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Nexus Security Assistant</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-
         :root {
-            --neon-green: #00ff41;
-            --dark-bg: #050505;
-            --panel-bg: #0a0a0a;
-            --border-color: #1a331a;
+            --primary-green: #00ff41;
+            --dark-bg: #0a0a0a;
+            --panel-bg: #111;
+            --border-style: 1px solid #222;
         }
 
         body {
             background-color: var(--dark-bg);
-            color: var(--neon-green);
-            font-family: 'JetBrains+Mono', monospace;
-            overflow: hidden;
-            height: 100vh;
+            color: var(--primary-green);
+            font-family: 'Courier New', Courier, monospace;
             margin: 0;
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
             text-transform: uppercase;
         }
 
-        .scanline {
+        .main-container {
+            display: grid;
+            grid-template-columns: 250px 1fr 250px;
+            gap: 10px;
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+        }
+
+        /* Painéis Laterais */
+        .panel {
+            background: var(--panel-bg);
+            border: var(--border-style);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h2 { font-size: 0.9rem; border-bottom: 1px solid #333; padding-bottom: 5px; margin: 0; }
+
+        /* Terminal Central */
+        .terminal-container {
+            border: var(--border-style);
+            background: black;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #terminal-log {
+            flex-grow: 1;
+            padding: 20px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            overflow-y: auto;
+        }
+
+        .input-area {
+            padding: 20px;
+            border-top: var(--border-style);
+            text-align: center;
+        }
+
+        input {
+            background: transparent;
+            border: 1px solid var(--primary-green);
+            color: var(--primary-green);
+            padding: 10px;
+            width: 80%;
+            margin-bottom: 10px;
+            outline: none;
+        }
+
+        button {
+            background: var(--primary-green);
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 85%;
+        }
+
+        button:hover { opacity: 0.8; }
+
+        /* Estilos de Status */
+        .status-item { font-size: 0.7rem; margin-bottom: 10px; color: #666; }
+        .status-val { color: var(--primary-green); float: right; }
+        
+        #face-scanner {
+            width: 100%;
+            height: 150px;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: #050505;
+        }
+
+        .scanning-line {
             width: 100%;
             height: 2px;
-            background: rgba(0, 255, 65, 0.1);
+            background: var(--primary-green);
             position: absolute;
             top: 0;
-            left: 0;
-            z-index: 100;
-            pointer-events: none;
-            animation: scan 8s linear infinite;
+            animation: scan 2s infinite linear;
+            box-shadow: 0 0 15px var(--primary-green);
+            display: none;
         }
 
         @keyframes scan {
@@ -42,334 +121,119 @@
             100% { top: 100%; }
         }
 
-        .crt-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 4px, 3px 100%;
-            pointer-events: none;
-            z-index: 99;
-        }
-
-        .terminal-panel {
-            border: 1px solid var(--border-color);
-            background: var(--panel-bg);
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.05);
-        }
-
-        .cursor {
-            display: inline-block;
-            width: 10px;
-            height: 20px;
-            background: var(--neon-green);
-            animation: blink 1s step-end infinite;
-            vertical-align: middle;
-        }
-
-        @keyframes blink {
-            50% { opacity: 0; }
-        }
-
-        .glitch-text:hover {
-            text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff;
-        }
-
-        .btn-action {
-            border: 1px solid var(--neon-green);
-            transition: all 0.3s;
-        }
-
-        .btn-action:hover {
-            background: var(--neon-green);
-            color: black;
-            box-shadow: 0 0 20px var(--neon-green);
-        }
-
-        #video-feed {
-            filter: grayscale(1) contrast(1.5) brightness(0.8) sepia(1) hue-rotate(100deg);
-            width: 100%;
-            border: 1px solid var(--border-color);
-        }
-
-        .status-active {
-            color: var(--neon-green);
-            text-shadow: 0 0 5px var(--neon-green);
-        }
-
-        .hidden-stage {
-            display: none;
-        }
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
     </style>
 </head>
-<body class="p-4 md:p-8 flex flex-col gap-4">
-    <div class="scanline"></div>
-    <div class="crt-overlay"></div>
+<body>
 
-    <!-- Header / Status Bar -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2">
-        <div class="terminal-panel p-4 col-span-1">
-            <h2 class="text-xs opacity-60 mb-2">SYSTEM STATUS</h2>
-            <div class="text-sm">
-                <p>NODE: <span class="float-right text-white">OS-CENTRAL-01</span></p>
-                <p>ENCRYPTION: <span class="float-right text-white">AES-256-GCM</span></p>
-                <p>UPTIME: <span class="float-right text-white" id="uptime">00:00:00</span></p>
-                <p>GEO-LOC: <span class="float-right text-white">LAT 23.55 S</span></p>
-            </div>
+<div class="main-container">
+    <div class="panel">
+        <div>
+            <h2>SYSTEM STATUS</h2>
+            <div class="status-item">NODE: <span class="status-val">GS-CENTRAL-01</span></div>
+            <div class="status-item">ENCRYPTION: <span class="status-val">AES-256-GCM</span></div>
         </div>
-        <div class="terminal-panel p-4 col-span-2 flex items-center justify-between">
-            <h1 class="text-xl font-bold tracking-widest glitch-text">TERMINAL // STAGE <span id="stage-number">01</span></h1>
-            <div class="flex gap-2">
-                <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-                <div class="w-3 h-3 rounded-full bg-green-900"></div>
-            </div>
-        </div>
-        <div class="terminal-panel p-4 col-span-1">
-            <h2 class="text-xs opacity-60 mb-2">RECONHECIMENTO</h2>
-            <div class="flex justify-center items-center h-12">
-                <span id="reco-status" class="text-xs">AGUARDANDO...</span>
+        <div>
+            <h2>ACCESS LOGS</h2>
+            <div id="access-history" style="font-size: 0.65rem;">
+                [14:32:01] System Standby...
             </div>
         </div>
     </div>
 
-    <!-- Main Workspace -->
-    <div class="flex-grow grid grid-cols-1 md:grid-cols-4 gap-4 overflow-hidden">
+    <div class="terminal-container">
+        <div id="terminal-log">
+            > BIOS_STATUS: OK <br>
+            > WAITING_FOR_INPUT... <br>
+            > POR FAVOR, INSIRA O CARTÃO OU DIGITE O ID MANUAL.
+        </div>
         
-        <!-- Left Sidebar: Logs -->
-        <div class="terminal-panel p-4 col-span-1 flex flex-col gap-4 overflow-hidden hidden md:flex">
-            <div>
-                <h2 class="text-xs mb-2 border-b border-green-900 pb-1">ACCESS LOGS</h2>
-                <div id="logs" class="text-[10px] space-y-2 opacity-80">
-                    <p>14:20:01 Unauthorized access attempt - Blocked</p>
-                    <p>14:18:45 System diagnostic completed</p>
-                </div>
-            </div>
-            <div class="mt-auto">
-                <h2 class="text-xs mb-2 border-b border-green-900 pb-1">SECURITY STATUS</h2>
-                <div class="text-[10px] space-y-1">
-                    <p class="text-green-500">● FIREWALL ACTIVE</p>
-                    <p class="text-green-500">● ENCRYPTION STABLE</p>
-                    <p class="text-yellow-500">○ BIOMETRIC WAITING</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Center: Interaction Area -->
-        <div class="terminal-panel col-span-2 p-6 flex flex-col overflow-y-auto relative bg-[#070707]">
-            <div id="terminal-content" class="flex-grow space-y-4 text-sm md:text-base mb-20">
-                <div class="flex gap-2">
-                    <span class="opacity-50">></span>
-                    <p class="text-white">BOOT_STATUS: OK</p>
-                </div>
-                <div class="flex gap-2">
-                    <span class="opacity-50">></span>
-                    <p class="text-white">WAITING_FOR_INPUT...</p>
-                </div>
-                <div class="pt-4 text-green-400">
-                    <span class="font-bold text-green-500">NEXUS:</span> <span id="nexus-text">Aproxime o cartão de acesso ou informe sua credencial ID.</span>
-                </div>
-            </div>
-
-            <!-- Stage Control Buttons -->
-            <div id="controls" class="absolute bottom-6 left-6 right-6 flex flex-col gap-4">
-                <!-- STAGE 1: CARD -->
-                <div id="stage-1-ui" class="flex flex-col gap-2">
-                    <button onclick="useCard()" class="btn-action w-full py-4 flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                        LER CARTÃO DE ACESSO
-                    </button>
-                    <button onclick="gotoID()" class="text-[10px] text-center opacity-50 hover:opacity-100 underline">NÃO POSSUO CARTÃO / USAR ID</button>
-                </div>
-
-                <!-- STAGE 2: ID INPUT -->
-                <div id="stage-2-ui" class="hidden-stage flex gap-2">
-                    <input type="text" id="id-input" placeholder="DIGITE O ID DA CORPORAÇÃO" class="bg-black border border-green-900 flex-grow p-3 text-green-500 outline-none focus:border-green-500">
-                    <button onclick="validateID()" class="btn-action px-6 py-3 font-bold">ENTRAR</button>
-                </div>
-
-                <!-- STAGE 3: FACE -->
-                <div id="stage-3-ui" class="hidden-stage">
-                    <button onclick="startFacialScan()" class="btn-action w-full py-4 flex items-center justify-center gap-2 animate-pulse">
-                        INICIAR SCANNER BIOMÉTRICO
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right Sidebar: Camera/History -->
-        <div class="terminal-panel p-4 col-span-1 flex flex-col gap-4 overflow-hidden">
-            <div>
-                <h2 class="text-xs mb-2 border-b border-green-900 pb-1">RECONHECIMENTO</h2>
-                <div class="relative bg-black aspect-square flex items-center justify-center border border-green-900">
-                    <video id="video-feed" class="hidden" autoplay playsinline></video>
-                    <div id="cam-placeholder" class="text-center p-4">
-                        <svg class="w-12 h-12 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        <p class="text-[10px] opacity-40">STAGE 3: FACIAL RECOGNITION<br>(WAITING FOR STAGE 2 COMPLETION)</p>
-                    </div>
-                    <div id="scan-bar" class="absolute top-0 left-0 w-full h-1 bg-green-500 hidden" style="box-shadow: 0 0 15px var(--neon-green);"></div>
-                </div>
-            </div>
-            <div class="flex-grow">
-                <h2 class="text-xs mb-2 border-b border-green-900 pb-1">HISTÓRICO</h2>
-                <div id="history" class="text-[10px] space-y-1 opacity-60">
-                    <p>SEM LOGS RECENTES</p>
-                </div>
-            </div>
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="DIGITE O ID..." autocomplete="off">
+            <button onclick="processInput()">LER CARTÃO / ENTRAR</button>
+            <div style="font-size: 0.6rem; margin-top: 10px; color: #444;">UNIFIED SECURITY INTERFACE</div>
         </div>
     </div>
 
-    <script>
-        // Configurações e Estado
-        let currentStage = 1;
-        const terminalContent = document.getElementById('terminal-content');
-        const nexusText = document.getElementById('nexus-text');
-        const logsContainer = document.getElementById('logs');
+    <div class="panel">
+        <div>
+            <h2>RECONHECIMENTO</h2>
+            <div id="face-scanner">
+                <div class="scanning-line" id="scanner-line"></div>
+                <span id="scan-text" style="font-size: 0.6rem;">AGUARDANDO ID</span>
+            </div>
+        </div>
+        <div>
+            <h2>SECURITY STATUS</h2>
+            <div id="lock-status" style="color: red;">🔒 LOCKED</div>
+            <div id="user-info" style="font-size: 0.7rem; margin-top: 10px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const USERS = {
+        "ID-HT-1020": { nome: "Heitor Torres", cargo: "PRODUÇÃO", nv: 1 },
+        "ID-BS-2030": { nome: "Beatriz Soares", cargo: "GERENTE", nv: 2 },
+        "ID-RR-3040": { nome: "Ricardo Rocha", cargo: "CHEFE", nv: 3 }
+    };
+
+    const log = document.getElementById('terminal-log');
+    const input = document.getElementById('user-input');
+    const scannerLine = document.getElementById('scanner-line');
+    const scanText = document.getElementById('scan-text');
+    const lockStatus = document.getElementById('lock-status');
+    const userInfo = document.getElementById('user-info');
+
+    function addLog(text) {
+        log.innerHTML += `<br>> ${text}`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function processInput() {
+        const id = input.value.toUpperCase();
+        if (USERS[id]) {
+            startAuth(USERS[id]);
+        } else {
+            addLog("<span style='color:red;'>ERRO: ID INVÁLIDO OU CARTÃO NÃO RECONHECIDO.</span>");
+        }
+        input.value = "";
+    }
+
+    function startAuth(user) {
+        addLog(`ID DETECTADO: ${user.nome}`);
+        addLog("INICIANDO SCANNER FACIAL...");
         
-        // Mock de respostas pré-definidas da assistente
-        const responses = {
-            welcome: "Acesso via cartão detectado. Bem-vindo, Agente Especial.",
-            askId: "Cartão não detectado. Por favor, informe o seu ID de registro da corporação para prosseguir.",
-            idError: "ID Inválido ou não encontrado na base de dados. Tente novamente.",
-            idSuccess: "ID Verificado: [NIVEL 4]. Solicitando confirmação biométrica de face.",
-            scanStart: "Posicione-se em frente à câmera. Iniciando varredura de pontos nodais...",
-            scanFail: "Falha na leitura. Mantenha-se imóvel.",
-            accessGranted: "Identidade confirmada. Acesso total ao Terminal OS-CENTRAL-01 concedido. Como posso ajudar hoje?",
-            accessDenied: "BIOMETRIA NÃO CONFERE. Protocolo de segurança acionado."
-        };
+        // Ativa animação visual
+        scannerLine.style.display = "block";
+        scanText.innerText = "ESCANEANDO...";
+        scanText.classList.add("blink");
 
-        // Relógio de Uptime
-        let seconds = 1520340; 
-        setInterval(() => {
-            seconds++;
-            const h = Math.floor(seconds / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            const s = seconds % 60;
-            document.getElementById('uptime').innerText = `${String(h).padStart(3, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-        }, 1000);
+        setTimeout(() => {
+            completeAuth(user);
+        }, 3000); // Simula 3 segundos de scan
+    }
 
-        // Funções de Mensagem
-        function addLog(msg) {
-            const time = new Date().toLocaleTimeString('pt-BR', { hour12: false });
-            const p = document.createElement('p');
-            p.innerText = `${time} ${msg}`;
-            logsContainer.prepend(p);
-        }
-
-        function nexusSay(text) {
-            nexusText.innerText = text;
-            addLog(`NEXUS MSG: ${text.substring(0, 20)}...`);
-            
-            // Efeito visual de scroll
-            const div = document.createElement('div');
-            div.className = "flex gap-2";
-            div.innerHTML = `<span class="opacity-50">></span><p class="text-white">${text}</p>`;
-            terminalContent.appendChild(div);
-            terminalContent.scrollTop = terminalContent.scrollHeight;
-        }
-
-        // Fluxo de Lógica
+    function completeAuth(user) {
+        scannerLine.style.display = "none";
+        scanText.innerText = "MATCH 100%";
+        scanText.classList.remove("blink");
         
-        // FASE 1: CARTÃO
-        function useCard() {
-            nexusSay(responses.welcome);
-            addLog("Auth: NFC Card detected");
-            // Se usar cartão, pula para reconhecimento facial direto
-            setTimeout(() => {
-                goToStage(3);
-            }, 1000);
-        }
+        lockStatus.innerHTML = "🔓 UNLOCKED";
+        lockStatus.style.color = "var(--primary-green)";
+        
+        userInfo.innerHTML = `USUÁRIO: ${user.nome}<br>CARGO: ${user.cargo}<br>NÍVEL: ${user.nv}`;
+        
+        addLog(`ACESSO CONCEDIDO: NÍVEL ${user.nv}`);
+        addLog(`BEM-VINDO, ${user.nome}.`);
 
-        function gotoID() {
-            nexusSay(responses.askId);
-            goToStage(2);
-        }
+        // Atualiza Histórico Lateral
+        const history = document.getElementById('access-history');
+        const now = new Date().toLocaleTimeString();
+        history.innerHTML = `[${now}] ${user.nome} LOGGED IN<br>` + history.innerHTML;
+    }
+</script>
 
-        // FASE 2: ID
-        function validateID() {
-            const id = document.getElementById('id-input').value;
-            if (id.length < 4) {
-                nexusSay(responses.idError);
-                return;
-            }
-            nexusSay(responses.idSuccess);
-            addLog(`Auth: ID ${id} accepted`);
-            setTimeout(() => {
-                goToStage(3);
-            }, 1000);
-        }
-
-        // FASE 3: RECONHECIMENTO FACIAL
-        async function startFacialScan() {
-            const video = document.getElementById('video-feed');
-            const placeholder = document.getElementById('cam-placeholder');
-            const scanBar = document.getElementById('scan-bar');
-            const recoStatus = document.getElementById('reco-status');
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
-                video.classList.remove('hidden');
-                placeholder.classList.add('hidden');
-                scanBar.classList.remove('hidden');
-                scanBar.style.animation = "scan 2s ease-in-out infinite";
-                
-                nexusSay(responses.scanStart);
-                recoStatus.innerText = "ESCANEANDO...";
-                recoStatus.className = "text-yellow-400 animate-pulse";
-
-                setTimeout(() => {
-                    grantAccess(stream);
-                }, 4000);
-
-            } catch (err) {
-                nexusSay("ERRO DE HARDWARE: Câmera não detectada. Simulando varredura...");
-                // Simulação sem câmera
-                placeholder.innerHTML = `<div class="w-full text-center text-xs text-green-500 animate-pulse">[ SCANNING BIO-DATA... ]</div>`;
-                setTimeout(() => {
-                    grantAccess();
-                }, 3000);
-            }
-        }
-
-        function grantAccess(stream) {
-            nexusSay(responses.accessGranted);
-            document.getElementById('reco-status').innerText = "VERIFICADO";
-            document.getElementById('reco-status').className = "text-green-500 font-bold";
-            document.getElementById('scan-bar').classList.add('hidden');
-            addLog("SECURITY: Full Access Granted");
-
-            // Interface Final
-            document.getElementById('controls').innerHTML = `
-                <div class="flex gap-2">
-                    <input type="text" placeholder="COMANDO PARA NEXUS..." class="bg-black border border-green-500 flex-grow p-3 text-green-500 outline-none">
-                    <button class="btn-action px-6 py-3 font-bold">EXECUTAR</button>
-                </div>
-            `;
-
-            if (stream) {
-                // Manter a câmera mas parar o scan visual
-                const scanBar = document.getElementById('scan-bar');
-                scanBar.classList.add('hidden');
-            }
-        }
-
-        // Helper de transição de UI
-        function goToStage(num) {
-            currentStage = num;
-            document.getElementById('stage-number').innerText = `0${num}`;
-            
-            document.getElementById('stage-1-ui').classList.add('hidden-stage');
-            document.getElementById('stage-2-ui').classList.add('hidden-stage');
-            document.getElementById('stage-3-ui').classList.add('hidden-stage');
-            
-            document.getElementById(`stage-${num}-ui`).classList.remove('hidden-stage');
-            
-            if (num === 3) {
-                document.getElementById('reco-status').innerText = "AGUARDANDO BIOMETRIA";
-                document.getElementById('reco-status').classList.add('text-yellow-500');
-            }
-        }
-
-    </script>
 </body>
 </html>

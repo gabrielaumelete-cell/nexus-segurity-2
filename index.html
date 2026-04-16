@@ -131,7 +131,7 @@
             display: none;
         }
 
-        /* BANCO DE DADOS */
+        /* BANCO DE DADOS GESTÃO */
         .db-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -160,6 +160,8 @@
             flex-direction: column;
             align-items: center;
             margin-top: 10px;
+            border-top: 1px solid #333;
+            padding-top: 10px;
         }
     </style>
 </head>
@@ -168,79 +170,87 @@
 <div id="modal-overlay">
     <div id="step-db-auth" class="modal-content" style="display: none;">
         <h2>ACESSO RESTRITO - DATABASE</h2>
-        <input type="password" id="db-pass-input" placeholder="SENHA DE ACESSO">
-        <button onclick="verifyDBPass()">LOGAR NO DB</button>
-        <button onclick="closeModal()" style="border:none; color:#555">SAIR</button>
+        <input type="password" id="db-pass-input" placeholder="CHAVE MESTRA">
+        <button onclick="verifyDBPass()">ACESSAR REGISTROS</button>
+        <button onclick="closeModal()" style="border:none; color:#555">CANCELAR</button>
     </div>
 
     <div id="step-db-view" class="modal-content" style="display: none;">
-        <h2>REGISTROS FOTOGRÁFICOS</h2>
+        <h2>SISTEMA DE ARQUIVOS ÓPTICOS</h2>
         <div class="db-grid">
             <div class="db-item">
                 <img id="photo-ht" class="captured-photo" src="" style="display:none">
-                <div id="placeholder-ht" style="height:80px; color:#333">[ SEM FOTO ]</div>
-                <button onclick="prepareCapture('ID-HT-1020')" style="width:100%; font-size:0.5rem">TIRAR FOTO</button>
-                HEITOR (PROD)
+                <div id="placeholder-ht" style="height:80px; line-height:80px; color:#222">[ SEM DADOS ]</div>
+                <button onclick="prepareCapture('ID-HT-1020')" style="width:100%; font-size:0.5rem">REGISTRAR FOTO</button>
+                HEITOR (HT-1020)
             </div>
             <div class="db-item">
                 <img id="photo-bs" class="captured-photo" src="" style="display:none">
-                <div id="placeholder-bs" style="height:80px; color:#333">[ SEM FOTO ]</div>
-                <button onclick="prepareCapture('ID-BS-2030')" style="width:100%; font-size:0.5rem">TIRAR FOTO</button>
-                BEATRIZ (GERENTE)
+                <div id="placeholder-bs" style="height:80px; line-height:80px; color:#222">[ SEM DADOS ]</div>
+                <button onclick="prepareCapture('ID-BS-2030')" style="width:100%; font-size:0.5rem">REGISTRAR FOTO</button>
+                BEATRIZ (BS-2030)
             </div>
         </div>
 
         <div id="capture-zone">
-            <div id="camera-preview-container" style="width:200px; height:150px; border:1px solid var(--primary-green); position:relative; overflow:hidden">
+            <div style="width:200px; height:150px; border:1px solid var(--primary-green); overflow:hidden">
                 <video id="db-webcam" autoplay playsinline style="width:100%; height:100%; object-fit:cover; transform: scaleX(-1);"></video>
             </div>
-            <button onclick="takeSnapshot()" style="margin-top:10px; background:var(--primary-green); color:black">CAPTURAR AGORA</button>
+            <button onclick="takeSnapshot()" style="margin-top:10px; background:var(--primary-green); color:black">SALVAR REGISTRO</button>
         </div>
-
-        <button onclick="closeModal()" style="margin-top:20px; color:#555; border-color:#555">FECHAR</button>
+        <button onclick="closeModal()" style="margin-top:20px; color:#555">SAIR</button>
     </div>
 
     <div id="step-card" class="modal-content" style="display: none;">
-        <h2>LEITURA DE CARTÃO</h2>
-        <button onclick="processLogin('ID-HT-1020', 'CARD')">HEITOR</button>
-        <button onclick="processLogin('ID-BS-2030', 'CARD')">BEATRIZ</button>
+        <h2>LEITORA DE CARTÃO</h2>
+        <button onclick="processLogin('ID-HT-1020')">ID-HT-1020 (HEITOR)</button>
+        <button onclick="processLogin('ID-BS-2030')">ID-BS-2030 (BEATRIZ)</button>
+        <button onclick="closeModal()" style="border:none; color:#555">CANCELAR</button>
+    </div>
+
+    <div id="step-id-manual" class="modal-content" style="display: none;">
+        <h2>TERMINAL DE ID</h2>
+        <p style="font-size: 0.6rem;">DIGITE O CÓDIGO DO FUNCIONÁRIO</p>
+        <input type="text" id="input-manual-id" placeholder="EX: ID-HT-1020">
+        <button onclick="checkManualID()">PESQUISAR ID</button>
         <button onclick="closeModal()" style="border:none; color:#555">VOLTAR</button>
     </div>
 
     <div id="step-confirm" class="modal-content" style="display: none;">
-        <h2>VALIDAÇÃO</h2>
-        <div id="employee-data-display" style="text-align: left; font-size: 0.75rem; border: 1px dashed var(--primary-green); padding: 10px; margin-bottom: 15px;"></div>
-        <button id="final-btn" onclick="executeAuth()">CONFIRMAR</button>
-        <button id="scan-init-btn" onclick="triggerFaceScanUI()">ATIVAR SCANNER</button>
+        <h2>VALIDAÇÃO DE IDENTIDADE</h2>
+        <div id="employee-data-display" style="text-align: left; font-size: 0.75rem; border: 1px dashed var(--primary-green); padding: 15px; margin-bottom: 15px; background:#050505"></div>
+        <button id="scan-init-btn" onclick="triggerFaceScanUI()">INICIAR SCANNER ÓPTICO</button>
+        <button onclick="closeModal()" style="border:none; color:#555">CANCELAR</button>
     </div>
 </div>
 
 <div class="main-container">
     <div class="panel">
-        <h2>HISTORY</h2>
+        <h2>RELOG</h2>
         <div id="history-log" style="font-size: 0.5rem;"></div>
     </div>
 
     <div class="terminal-container">
-        <div id="terminal-log">> NEXUS OS...</div>
+        <div id="terminal-log">> AGUARDANDO COMANDO...</div>
         <div class="input-area">
             <button onclick="openModal('CARD')">💳 CARTÃO</button>
-            <button onclick="openModal('DB')">🗄️ DATABASE</button>
+            <button onclick="openModal('ID')">⌨️ DIGITAR ID</button>
+            <button onclick="openModal('DB')" style="border-color:#444; color:#444">🗄️ DATABASE</button>
         </div>
     </div>
 
     <div class="panel">
-        <h2>SCANNER ÓPTICO</h2>
+        <h2>SCANNER STATUS</h2>
         <div id="camera-container">
             <video id="webcam-view" autoplay playsinline></video>
             <div id="cam-placeholder" style="color:#222">[ OFFLINE ]</div>
         </div>
         <div id="sim-controls" style="display:none; justify-content:space-between; margin-top:10px">
-            <button onclick="finalize()" style="width:48%">OK</button>
-            <button onclick="logout()" class="btn-error" style="width:48%">ERRO</button>
+            <button onclick="finalize()" style="width:48%">CONCORDAR</button>
+            <button onclick="logout()" class="btn-error" style="width:48%">RECUSAR</button>
         </div>
-        <div id="lock-ui" style="color:red; text-align:center; margin-top:10px">🔒 LOCKED</div>
-        <button id="btn-logoff" onclick="logout()" style="display:none; margin-top:auto">LOGOFF</button>
+        <div id="lock-ui" style="color:red; text-align:center; margin-top:10px">🔒 SISTEMA TRANCADO</div>
+        <button id="btn-logoff" onclick="logout()" style="display:none; margin-top:auto">ENCERRAR SESSÃO</button>
     </div>
 </div>
 
@@ -252,8 +262,8 @@
     let currentUser = null;
 
     const USERS = {
-        "ID-HT-1020": { nome: "HEITOR TORRES", cargo: "PRODUÇÃO", nv: 1, id: "ID-HT-1020", key: "ht" },
-        "ID-BS-2030": { nome: "BEATRIZ SOARES", cargo: "GERENTE", nv: 2, id: "ID-BS-2030", key: "bs" }
+        "ID-HT-1020": { nome: "HEITOR TORRES", key: "ht" },
+        "ID-BS-2030": { nome: "BEATRIZ SOARES", key: "bs" }
     };
 
     function writeLog(msg, isError = false) {
@@ -262,7 +272,7 @@
         log.scrollTop = log.scrollHeight;
     }
 
-    // Carregar fotos salvas ao abrir o site
+    // Carrega fotos ao iniciar
     window.onload = () => {
         ['ht', 'bs'].forEach(key => {
             const saved = localStorage.getItem('photo-' + key);
@@ -274,10 +284,11 @@
         });
     };
 
-    async function openModal(type) {
+    function openModal(type) {
         document.getElementById('modal-overlay').style.display = 'flex';
         document.getElementById('step-db-auth').style.display = type === 'DB' ? 'block' : 'none';
         document.getElementById('step-card').style.display = type === 'CARD' ? 'block' : 'none';
+        document.getElementById('step-id-manual').style.display = type === 'ID' ? 'block' : 'none';
         document.getElementById('step-db-view').style.display = 'none';
         document.getElementById('step-confirm').style.display = 'none';
     }
@@ -291,66 +302,29 @@
         if (document.getElementById('db-pass-input').value === "senha1234") {
             document.getElementById('step-db-auth').style.display = 'none';
             document.getElementById('step-db-view').style.display = 'block';
-            writeLog("BANCO DE DADOS ACESSADO.");
+            writeLog("ACESSO AO DB CONCEDIDO.");
         } else {
-            writeLog("ACESSO NEGADO.", true);
+            writeLog("CHAVE INCORRETA.", true);
             closeModal();
         }
     }
 
-    // Preparar para tirar foto no DB
-    async function prepareCapture(id) {
-        targetId = id;
-        document.getElementById('capture-zone').style.display = 'flex';
-        const video = document.getElementById('db-webcam');
-        camStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = camStream;
-    }
-
-    // Tirar a foto real e salvar no LocalStorage
-    function takeSnapshot() {
-        const video = document.getElementById('db-webcam');
-        const canvas = document.getElementById('hidden-canvas');
-        const context = canvas.getContext('2d');
-        
-        // Desenha o vídeo no canvas (inverte para não ficar espelhado no salvo)
-        context.translate(canvas.width, 0);
-        context.scale(-1, 1);
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        const dataURL = canvas.toDataURL('image/png');
-        const userKey = USERS[targetId].key;
-
-        // Salva
-        localStorage.setItem('photo-' + userKey, dataURL);
-        
-        // Atualiza interface
-        const img = document.getElementById('photo-' + userKey);
-        img.src = dataURL;
-        img.style.display = 'block';
-        document.getElementById('placeholder-' + userKey).style.display = 'none';
-        
-        writeLog(`FOTO DE ${USERS[targetId].nome} REGISTRADA.`);
-        document.getElementById('capture-zone').style.display = 'none';
-        stopCamera();
-    }
-
-    function stopCamera() {
-        if (camStream) {
-            camStream.getTracks().forEach(t => t.stop());
-            camStream = null;
+    function checkManualID() {
+        const id = document.getElementById('input-manual-id').value.toUpperCase().trim();
+        if (USERS[id]) {
+            processLogin(id);
+        } else {
+            writeLog("ID NÃO ENCONTRADO NO BANCO.", true);
         }
     }
 
-    function processLogin(id, method) {
+    function processLogin(id) {
         currentUser = USERS[id];
+        currentUser.id = id;
         document.getElementById('step-card').style.display = 'none';
+        document.getElementById('step-id-manual').style.display = 'none';
         document.getElementById('step-confirm').style.display = 'block';
-        document.getElementById('employee-data-display').innerHTML = `NOME: ${currentUser.nome}<br>ID: ${currentUser.id}`;
-        
-        // Verifica se tem foto no DB para autorizar o scan
-        const hasPhoto = localStorage.getItem('photo-' + currentUser.key);
-        document.getElementById('scan-init-btn').style.borderColor = hasPhoto ? 'var(--primary-green)' : '#333';
+        document.getElementById('employee-data-display').innerHTML = `FUNCIONÁRIO: ${currentUser.nome}<br>REGISTRO: ${currentUser.id}<br>STATUS: AGUARDANDO SCAN`;
     }
 
     async function triggerFaceScanUI() {
@@ -366,20 +340,53 @@
         mainVid.style.display = 'block';
         document.getElementById('cam-placeholder').style.display = 'none';
         document.getElementById('sim-controls').style.display = 'flex';
-        writeLog("SISTEMA IA: COMPARANDO IMAGEM COM DB...");
+        writeLog(`IA: COMPARANDO SCAN COM REGISTRO ${currentUser.id}...`);
+    }
+
+    // Funções de Captura do DB
+    async function prepareCapture(id) {
+        targetId = id;
+        document.getElementById('capture-zone').style.display = 'flex';
+        const video = document.getElementById('db-webcam');
+        camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = camStream;
+    }
+
+    function takeSnapshot() {
+        const video = document.getElementById('db-webcam');
+        const canvas = document.getElementById('hidden-canvas');
+        const context = canvas.getContext('2d');
+        context.translate(canvas.width, 0);
+        context.scale(-1, 1);
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataURL = canvas.toDataURL('image/png');
+        const userKey = USERS[targetId].key;
+        localStorage.setItem('photo-' + userKey, dataURL);
+        const img = document.getElementById('photo-' + userKey);
+        img.src = dataURL; img.style.display = 'block';
+        document.getElementById('placeholder-' + userKey).style.display = 'none';
+        writeLog(`REGISTRO ATUALIZADO: ${targetId}`);
+        document.getElementById('capture-zone').style.display = 'none';
+        stopCamera();
+    }
+
+    function stopCamera() {
+        if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
     }
 
     function finalize() {
-        document.getElementById('lock-ui').innerHTML = "🔓 UNLOCKED";
+        document.getElementById('lock-ui').innerHTML = "🔓 ACESSO LIBERADO";
         document.getElementById('lock-ui').style.color = "var(--primary-green)";
         document.getElementById('btn-logoff').style.display = 'block';
         document.getElementById('sim-controls').style.display = 'none';
-        writeLog("ACESSO CONCEDIDO.");
+        writeLog(`SESSÃO INICIADA: ${currentUser.nome}`);
+        const history = document.getElementById('history-log');
+        history.innerHTML = `[${new Date().toLocaleTimeString()}] ${currentUser.id} IN<br>` + history.innerHTML;
     }
 
     function logout() {
         stopCamera();
-        location.reload(); // Reseta o estado da tela
+        location.reload();
     }
 </script>
 </body>

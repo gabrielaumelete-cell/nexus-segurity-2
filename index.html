@@ -1,4 +1,6 @@
-                <!DOCTYPE html>
+            
+
+    <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -33,7 +35,6 @@
             padding: 20px;
         }
 
-        /* Painéis Laterais */
         .panel {
             background: var(--panel-bg);
             border: var(--border-style);
@@ -45,7 +46,6 @@
 
         h2 { font-size: 0.9rem; border-bottom: 1px solid #333; padding-bottom: 5px; margin: 0; }
 
-        /* Terminal Central */
         .terminal-container {
             border: var(--border-style);
             background: black;
@@ -68,90 +68,115 @@
             text-align: center;
         }
 
-        input {
-            background: transparent;
-            border: 1px solid var(--primary-green);
-            color: var(--primary-green);
-            padding: 10px;
-            width: 80%;
-            margin-bottom: 10px;
-            outline: none;
-        }
-
         button {
             background: var(--primary-green);
             color: black;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 20px;
             cursor: pointer;
             font-weight: bold;
             width: 85%;
+            margin-top: 5px;
         }
 
-        button:hover { opacity: 0.8; }
-
-        /* Estilos de Status */
-        .status-item { font-size: 0.7rem; margin-bottom: 10px; color: #666; }
-        .status-val { color: var(--primary-green); float: right; }
-        
-        #face-scanner {
-            width: 100%;
-            height: 150px;
-            border: 1px solid #333;
-            display: flex;
-            align-items: center;
+        /* --- MODAL DE CARTÕES --- */
+        #modal-cartoes {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 100;
             justify-content: center;
-            position: relative;
-            background: #050505;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .card-selection {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card-item {
+            border: 2px solid var(--primary-green);
+            padding: 20px;
+            width: 150px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            background: #111;
+        }
+
+        .card-item:hover {
+            background: var(--primary-green);
+            color: black;
+            transform: translateY(-5px);
+        }
+
+        .card-item i { display: block; font-size: 2rem; margin-bottom: 10px; }
+
+        /* --- RESTO DOS ESTILOS --- */
+        #face-scanner {
+            width: 100%; height: 150px; border: 1px solid #333;
+            display: flex; align-items: center; justify-content: center;
+            position: relative; background: #050505;
         }
 
         .scanning-line {
-            width: 100%;
-            height: 2px;
-            background: var(--primary-green);
-            position: absolute;
-            top: 0;
-            animation: scan 2s infinite linear;
-            box-shadow: 0 0 15px var(--primary-green);
-            display: none;
+            width: 100%; height: 2px; background: var(--primary-green);
+            position: absolute; top: 0; animation: scan 2s infinite linear;
+            box-shadow: 0 0 15px var(--primary-green); display: none;
         }
 
-        @keyframes scan {
-            0% { top: 0; }
-            100% { top: 100%; }
-        }
-
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
         .blink { animation: blinker 1s linear infinite; }
         @keyframes blinker { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
 
+<div id="modal-cartoes">
+    <h2>SELECIONE O CARTÃO DE ACESSO</h2>
+    <div class="card-selection">
+        <div class="card-item" onclick="selectCard('ID-HT-1020')">
+            <div>NV 1</div>
+            <strong>HEITOR</strong>
+            <div style="font-size: 0.6rem;">PRODUÇÃO</div>
+        </div>
+        <div class="card-item" onclick="selectCard('ID-BS-2030')">
+            <div>NV 2</div>
+            <strong>BEATRIZ</strong>
+            <div style="font-size: 0.6rem;">GERENTE</div>
+        </div>
+        <div class="card-item" onclick="selectCard('ID-RR-3040')">
+            <div>NV 3</div>
+            <strong>RICARDO</strong>
+            <div style="font-size: 0.6rem;">CHEFE</div>
+        </div>
+    </div>
+    <button onclick="closeModal()" style="width: auto; margin-top: 30px; background: #444; color: white;">CANCELAR</button>
+</div>
+
 <div class="main-container">
     <div class="panel">
         <div>
             <h2>SYSTEM STATUS</h2>
-            <div class="status-item">NODE: <span class="status-val">GS-CENTRAL-01</span></div>
-            <div class="status-item">ENCRYPTION: <span class="status-val">AES-256-GCM</span></div>
+            <div style="font-size: 0.7rem;">MODO: <span style="color:var(--primary-green)">ONLINE</span></div>
         </div>
         <div>
             <h2>ACCESS LOGS</h2>
-            <div id="access-history" style="font-size: 0.65rem;">
-                [14:32:01] System Standby...
-            </div>
+            <div id="access-history" style="font-size: 0.65rem;"></div>
         </div>
     </div>
 
     <div class="terminal-container">
         <div id="terminal-log">
+            > TERMINAL // STAGE 01 <br>
             > BIOS_STATUS: OK <br>
-            > WAITING_FOR_INPUT... <br>
-            > POR FAVOR, INSIRA O CARTÃO OU DIGITE O ID MANUAL.
+            > WAITING_FOR_INPUT...
         </div>
-        
         <div class="input-area">
-            <input type="text" id="user-input" placeholder="DIGITE O ID..." autocomplete="off">
-            <button onclick="processInput()">LER CARTÃO / ENTRAR</button>
+            <button onclick="openModal()">💳 LER CARTÃO</button>
             <div style="font-size: 0.6rem; margin-top: 10px; color: #444;">UNIFIED SECURITY INTERFACE</div>
         </div>
     </div>
@@ -161,7 +186,7 @@
             <h2>RECONHECIMENTO</h2>
             <div id="face-scanner">
                 <div class="scanning-line" id="scanner-line"></div>
-                <span id="scan-text" style="font-size: 0.6rem;">AGUARDANDO ID</span>
+                <span id="scan-text" style="font-size: 0.6rem;">AGUARDANDO...</span>
             </div>
         </div>
         <div>
@@ -179,61 +204,49 @@
         "ID-RR-3040": { nome: "Ricardo Rocha", cargo: "CHEFE", nv: 3 }
     };
 
-    const log = document.getElementById('terminal-log');
-    const input = document.getElementById('user-input');
-    const scannerLine = document.getElementById('scanner-line');
-    const scanText = document.getElementById('scan-text');
-    const lockStatus = document.getElementById('lock-status');
-    const userInfo = document.getElementById('user-info');
+    function openModal() { document.getElementById('modal-cartoes').style.display = 'flex'; }
+    function closeModal() { document.getElementById('modal-cartoes').style.display = 'none'; }
+
+    function selectCard(id) {
+        closeModal();
+        startAuth(USERS[id]);
+    }
 
     function addLog(text) {
+        const log = document.getElementById('terminal-log');
         log.innerHTML += `<br>> ${text}`;
         log.scrollTop = log.scrollHeight;
     }
 
-    function processInput() {
-        const id = input.value.toUpperCase();
-        if (USERS[id]) {
-            startAuth(USERS[id]);
-        } else {
-            addLog("<span style='color:red;'>ERRO: ID INVÁLIDO OU CARTÃO NÃO RECONHECIDO.</span>");
-        }
-        input.value = "";
-    }
-
     function startAuth(user) {
-        addLog(`ID DETECTADO: ${user.nome}`);
+        addLog(`CARTÃO LIDO: ${user.nome}`);
         addLog("INICIANDO SCANNER FACIAL...");
         
-        // Ativa animação visual
-        scannerLine.style.display = "block";
-        scanText.innerText = "ESCANEANDO...";
-        scanText.classList.add("blink");
+        document.getElementById('scanner-line').style.display = "block";
+        document.getElementById('scan-text').innerText = "ESCANEANDO...";
+        document.getElementById('scan-text').classList.add("blink");
 
         setTimeout(() => {
             completeAuth(user);
-        }, 3000); // Simula 3 segundos de scan
+        }, 2500);
     }
 
     function completeAuth(user) {
-        scannerLine.style.display = "none";
-        scanText.innerText = "MATCH 100%";
-        scanText.classList.remove("blink");
+        document.getElementById('scanner-line').style.display = "none";
+        document.getElementById('scan-text').innerText = "MATCH 100%";
+        document.getElementById('scan-text').classList.remove("blink");
         
-        lockStatus.innerHTML = "🔓 UNLOCKED";
-        lockStatus.style.color = "var(--primary-green)";
+        document.getElementById('lock-status').innerHTML = "🔓 UNLOCKED";
+        document.getElementById('lock-status').style.color = "var(--primary-green)";
         
-        userInfo.innerHTML = `USUÁRIO: ${user.nome}<br>CARGO: ${user.cargo}<br>NÍVEL: ${user.nv}`;
+        document.getElementById('user-info').innerHTML = `USUÁRIO: ${user.nome}<br>CARGO: ${user.cargo}<br>NÍVEL: ${user.nv}`;
         
         addLog(`ACESSO CONCEDIDO: NÍVEL ${user.nv}`);
-        addLog(`BEM-VINDO, ${user.nome}.`);
+        addLog(`BEM-VINDO, ${user.nome.split(' ')[0]}.`);
 
-        // Atualiza Histórico Lateral
         const history = document.getElementById('access-history');
-        const now = new Date().toLocaleTimeString();
-        history.innerHTML = `[${now}] ${user.nome} LOGGED IN<br>` + history.innerHTML;
+        history.innerHTML = `[${new Date().toLocaleTimeString()}] ${user.nome} IN<br>` + history.innerHTML;
     }
 </script>
-
 </body>
 </html>

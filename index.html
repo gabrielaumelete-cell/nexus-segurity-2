@@ -100,7 +100,7 @@
             border: 1px solid var(--primary-green);
             padding: 30px;
             text-align: center;
-            width: 350px;
+            width: 380px;
         }
 
         input {
@@ -132,7 +132,7 @@
             display: none;
         }
 
-        .scanning-line {
+        #scanner-line {
             width: 100%; height: 2px;
             background: var(--primary-green);
             position: absolute; top: 0;
@@ -146,90 +146,132 @@
 
         #sim-controls { display: none; margin-top: 10px; justify-content: space-between; }
         
-        .data-sheet {
-            text-align: left;
-            font-size: 0.75rem;
-            border: 1px dashed var(--primary-green);
-            padding: 10px;
-            margin-bottom: 15px;
+        .db-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
         }
 
-        /* ADMIN PANEL */
-        #admin-panel { display: none; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; }
-        .admin-btn { font-size: 0.6rem; padding: 5px; width: 100%; margin-bottom: 5px; border-color: #555; color: #555; }
-        .active-card { color: var(--primary-green); border-color: var(--primary-green); }
-        .disabled-card { color: var(--error-red); border-color: var(--error-red); }
+        .db-item {
+            border: 1px solid #333;
+            padding: 5px;
+            font-size: 0.6rem;
+        }
+
+        .photo-placeholder {
+            width: 100%;
+            height: 60px;
+            background: #222;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.5rem;
+            color: #444;
+        }
     </style>
 </head>
 <body>
 
 <div id="modal-overlay">
-    <div id="step-card" class="modal-content">
+    <div id="step-db-auth" class="modal-content" style="display: none;">
+        <h2>ACESSO RESTRITO DB</h2>
+        <p style="font-size: 0.6rem;">INSIRA A CHAVE DE ACESSO</p>
+        <input type="password" id="db-pass-input" placeholder="SENHA">
+        <button onclick="verifyDBPass()">LIBERAR ACESSO</button>
+        <button onclick="closeModal()" style="border:none; color: #555;">CANCELAR</button>
+    </div>
+
+    <div id="step-db-view" class="modal-content" style="display: none; width: 500px;">
+        <h2>BANCO DE DADOS FOTOGRÁFICO</h2>
+        <div class="db-grid">
+            <div class="db-item">
+                <div class="photo-placeholder">[ FOTO REGISTRADA ]</div>
+                HEITOR TORRES (ID-HT-1020)
+            </div>
+            <div class="db-item">
+                <div class="photo-placeholder">[ FOTO REGISTRADA ]</div>
+                BEATRIZ SOARES (ID-BS-2030)
+            </div>
+            <div class="db-item">
+                <div class="photo-placeholder">[ FOTO REGISTRADA ]</div>
+                RICARDO ROCHA (ID-RR-3040)
+            </div>
+            <div class="db-item" style="border-style: dashed;">
+                <div class="photo-placeholder">+</div>
+                NOVO REGISTRO
+            </div>
+        </div>
+        <button onclick="closeModal()" style="margin-top:20px;">FECHAR DB</button>
+    </div>
+
+    <div id="step-card" class="modal-content" style="display: none;">
         <h2>LEITURA DE CARTÃO</h2>
         <button onclick="processLogin('ID-HT-1020', 'CARD')">HEITOR (NV 1)</button>
         <button onclick="processLogin('ID-BS-2030', 'CARD')">BEATRIZ (NV 2)</button>
         <button onclick="processLogin('ID-RR-3040', 'CARD')">RICARDO (NV 3)</button>
-        <button onclick="closeModal()" style="border:none; color: #555;">FECHAR</button>
-    </div>
-
-    <div id="step-manual" class="modal-content">
-        <h2>ACESSO VIA ID</h2>
-        <input type="text" id="manual-id-input" placeholder="DIGITE O ID">
-        <button onclick="checkManualID()">VALIDAR CREDENCIAIS</button>
         <button onclick="closeModal()" style="border:none; color: #555;">VOLTAR</button>
     </div>
 
-    <div id="step-confirm" class="modal-content">
-        <h2 id="confirm-type-title">VERIFICAÇÃO</h2>
-        <div id="employee-data-display" class="data-sheet"></div>
-        <button id="final-btn" onclick="executeAuth()">ENTRAR NO SISTEMA</button>
-        <button id="scan-init-btn" onclick="triggerFaceScanUI()">INICIAR FACE SCAN</button>
+    <div id="step-manual" class="modal-content" style="display: none;">
+        <h2>SCANNER DE ID</h2>
+        <input type="text" id="manual-id-input" placeholder="DIGITE O ID">
+        <button onclick="checkManualID()">BUSCAR REGISTRO</button>
+        <button onclick="closeModal()" style="border:none; color: #555;">VOLTAR</button>
+    </div>
+
+    <div id="step-confirm" class="modal-content" style="display: none;">
+        <h2 id="confirm-type-title">VALIDAÇÃO DE DADOS</h2>
+        <div id="employee-data-display" style="text-align: left; font-size: 0.75rem; border: 1px dashed var(--primary-green); padding: 10px; margin-bottom: 15px;"></div>
+        <button id="final-btn" onclick="executeAuth()">CONFIRMAR ENTRADA</button>
+        <button id="scan-init-btn" onclick="triggerFaceScanUI()">ATIVAR SCANNER ÓPTICO</button>
     </div>
 </div>
 
 <div class="main-container">
     <div class="panel">
-        <h2>SYSTEM HISTORY</h2>
-        <div id="history-log" style="font-size: 0.55rem; overflow-y: auto; max-height: 200px;"></div>
+        <h2>HISTÓRICO</h2>
+        <div id="history-log" style="font-size: 0.55rem; overflow-y: auto; max-height: 150px;"></div>
         
-        <div id="admin-panel">
-            <h2 style="font-size: 0.6rem; color: #555; margin-bottom: 10px;">GESTÃO DE CARTÕES</h2>
-            <button id="adm-ht" class="admin-btn" onclick="toggleCard('ID-HT-1020')">HT-1020: ATIVO</button>
-            <button id="adm-bs" class="admin-btn" onclick="toggleCard('ID-BS-2030')">BS-2030: ATIVO</button>
-            <button id="adm-rr" class="admin-btn" onclick="toggleCard('ID-RR-3040')">RR-3040: ATIVO</button>
+        <div id="admin-panel" style="display:none; border-top: 1px solid #333; padding-top:10px;">
+            <h2 style="font-size: 0.6rem;">SISTEMA DE CARTÕES</h2>
+            <button id="adm-ht" class="admin-btn" style="font-size: 0.5rem;" onclick="toggleCard('ID-HT-1020')">HT: ATIVO</button>
+            <button id="adm-bs" class="admin-btn" style="font-size: 0.5rem;" onclick="toggleCard('ID-BS-2030')">BS: ATIVO</button>
+            <button id="adm-rr" class="admin-btn" style="font-size: 0.5rem;" onclick="toggleCard('ID-RR-3040')">RR: ATIVO</button>
         </div>
     </div>
 
     <div class="terminal-container">
         <div id="terminal-log">
             > NEXUS SECURITY OS <br>
-            > AGUARDANDO AUTENTICAÇÃO...
+            > AGUARDANDO COMANDO...
         </div>
-        <div class="input-area" id="main-controls">
-            <button onclick="openModal('CARD')">💳 LER CARTÃO</button>
-            <button onclick="openModal('MANUAL')">⌨️ ENTRAR COM ID</button>
+        <div class="input-area">
+            <button onclick="openModal('CARD')">💳 CARTÃO FÍSICO</button>
+            <button onclick="openModal('MANUAL')">⌨️ ENTRADA DE ID</button>
+            <button onclick="openModal('DB')" style="border-color: #555; color: #555;">🗄️ BANCO DE DADOS</button>
         </div>
     </div>
 
     <div class="panel">
-        <h2>SECURITY SCAN</h2>
+        <h2>SCANNER ÓPTICO</h2>
         <div id="camera-container">
-            <div class="scanning-line" id="scanner-line"></div>
+            <div id="scanner-line"></div>
             <video id="webcam-view" autoplay playsinline></video>
-            <div id="cam-placeholder" style="color:#222; font-size: 0.6rem;">[ SENSOR OFF ]</div>
+            <div id="cam-placeholder" style="color:#222; font-size: 0.5rem;">[ SENSOR DESATIVADO ]</div>
         </div>
         
         <div id="sim-controls">
-            <button onclick="simulateResult(true)" style="font-size: 0.5rem; width: 48%;">FACE OK</button>
-            <button onclick="simulateResult(false)" class="btn-error" style="font-size: 0.5rem; width: 48%;">ERRO</button>
+            <button onclick="simulateResult(true)" style="font-size: 0.5rem; width: 48%;">IMAGEM OK</button>
+            <button onclick="simulateResult(false)" class="btn-error" style="font-size: 0.5rem; width: 48%;">FALHA</button>
         </div>
 
-        <div id="lock-ui" style="color: red; text-align: center; margin-top: 10px;">🔒 LOCKED</div>
-        <div id="user-display" style="font-size: 0.6rem; line-height: 1.4;"></div>
+        <div id="lock-ui" style="color: red; text-align: center; margin-top: 5px; font-size: 0.8rem;">🔒 LOCKED</div>
+        <div id="user-display" style="font-size: 0.6rem; line-height: 1.3;"></div>
         
-        <button id="btn-glasses" onclick="simulateGlassesRemoval()" style="display:none; border-color: orange; color: orange; font-size: 0.6rem;">👓 REMOVER ÓCULOS</button>
-        
-        <button id="btn-logoff" onclick="logout()" style="display:none; margin-top: auto; border-color: #555; color: #555; font-size: 0.6rem;">ENCERRAR SESSÃO</button>
+        <button id="btn-glasses" onclick="simulateGlassesRemoval()" style="display:none; border-color: orange; color: orange; font-size: 0.5rem;">👓 REMOVER ÓCULOS</button>
+        <button id="btn-logoff" onclick="logout()" style="display:none; margin-top: auto; border-color: #555; color: #555; font-size: 0.6rem;">LOGOFF</button>
     </div>
 </div>
 
@@ -240,78 +282,60 @@
         "ID-RR-3040": { nome: "RICARDO ROCHA", cargo: "CHEFE", nv: 3, id: "ID-RR-3040" }
     };
 
-    let CARD_STATUS = {
-        "ID-HT-1020": true,
-        "ID-BS-2030": true,
-        "ID-RR-3040": true
-    };
-
+    let CARD_STATUS = { "ID-HT-1020": true, "ID-BS-2030": true, "ID-RR-3040": true };
     let currentUser = null;
     let camStream = null;
-    let idleTimer;
 
     function writeLog(msg, isError = false) {
         const log = document.getElementById('terminal-log');
-        const color = isError ? 'var(--error-red)' : 'var(--primary-green)';
-        log.innerHTML += `<br><span style="color:${color}">> ${msg}</span>`;
+        log.innerHTML += `<br><span style="color:${isError ? 'var(--error-red)' : 'var(--primary-green)'}">> ${msg}</span>`;
         log.scrollTop = log.scrollHeight;
     }
 
     async function startCamera() {
         const video = document.getElementById('webcam-view');
-        const placeholder = document.getElementById('cam-placeholder');
         if (camStream) return;
         try {
             camStream = await navigator.mediaDevices.getUserMedia({ video: true });
             video.srcObject = camStream;
             video.style.display = 'block';
-            placeholder.style.display = 'none';
-        } catch (err) { writeLog("ERRO DE HARDWARE: CÂMERA NÃO DETECTADA", true); }
+            document.getElementById('cam-placeholder').style.display = 'none';
+        } catch (err) { writeLog("ERRO: SENSOR ÓPTICO NÃO ENCONTRADO", true); }
     }
 
     function stopCamera() {
-        const video = document.getElementById('webcam-view');
-        const placeholder = document.getElementById('cam-placeholder');
-        if (camStream) {
-            camStream.getTracks().forEach(track => track.stop());
-            camStream = null;
-        }
-        video.style.display = 'none';
-        placeholder.style.display = 'block';
+        if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+        document.getElementById('webcam-view').style.display = 'none';
+        document.getElementById('cam-placeholder').style.display = 'block';
     }
 
     function openModal(type) {
         document.getElementById('modal-overlay').style.display = 'flex';
         document.getElementById('step-card').style.display = type === 'CARD' ? 'block' : 'none';
         document.getElementById('step-manual').style.display = type === 'MANUAL' ? 'block' : 'none';
+        document.getElementById('step-db-auth').style.display = type === 'DB' ? 'block' : 'none';
         document.getElementById('step-confirm').style.display = 'none';
+        document.getElementById('step-db-view').style.display = 'none';
     }
 
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
-    function toggleCard(id) {
-        if (currentUser.nv === 2 && id === "ID-RR-3040") {
-            writeLog("ERRO DE PERMISSÃO: NÍVEL INSUFICIENTE PARA ALTERAR CHEFIA", true);
-            return;
+    function verifyDBPass() {
+        const pass = document.getElementById('db-pass-input').value;
+        if (pass === "senha1234") {
+            document.getElementById('step-db-auth').style.display = 'none';
+            document.getElementById('step-db-view').style.display = 'block';
+            writeLog("ACESSO AO BANCO DE DADOS CONCEDIDO.");
+        } else {
+            writeLog("SENHA INCORRETA. ACESSO AO DB NEGADO.", true);
+            closeModal();
         }
-        CARD_STATUS[id] = !CARD_STATUS[id];
-        updateAdminPanel();
-        writeLog(`SISTEMA: CARTÃO ${id} ${CARD_STATUS[id] ? 'REATIVADO' : 'BLOQUEADO'}`);
-    }
-
-    function updateAdminPanel() {
-        if (!currentUser || currentUser.nv < 2) return;
-        ['ID-HT-1020', 'ID-BS-2030', 'ID-RR-3040'].forEach(id => {
-            const shortId = id.split('-')[1].toLowerCase();
-            const btn = document.getElementById(`adm-${shortId}`);
-            btn.innerText = `${id.split('-')[1]}-${id.split('-')[2]}: ${CARD_STATUS[id] ? 'ATIVO' : 'DESL.'}`;
-            btn.className = `admin-btn ${CARD_STATUS[id] ? 'active-card' : 'disabled-card'}`;
-        });
+        document.getElementById('db-pass-input').value = "";
     }
 
     function processLogin(id, method) {
         if (method === 'CARD' && !CARD_STATUS[id]) {
-            writeLog(`ALERTA: CARTÃO ${id} REJEITADO PELO FIREWALL!`, true);
+            writeLog(`ALERTA: CARTÃO ${id} DESATIVADO NO SISTEMA.`, true);
             closeModal();
             return;
         }
@@ -320,11 +344,8 @@
 
     function checkManualID() {
         const val = document.getElementById('manual-id-input').value.trim().toUpperCase();
-        if (USERS[val]) { 
-            showConfirmation(val, 'MANUAL'); 
-        } else { 
-            writeLog(`ERRO: ID ${val} NÃO LOCALIZADO NO BANCO DE DADOS`, true);
-        }
+        if (USERS[val]) showConfirmation(val, 'MANUAL');
+        else writeLog(`ERRO: ID ${val} NÃO CONSTA NO REGISTRO.`, true);
     }
 
     function showConfirmation(id, method) {
@@ -332,14 +353,7 @@
         document.getElementById('step-card').style.display = 'none';
         document.getElementById('step-manual').style.display = 'none';
         document.getElementById('step-confirm').style.display = 'block';
-        
-        document.getElementById('employee-data-display').innerHTML = `
-            NOME: ${currentUser.nome}<br>
-            CARGO: ${currentUser.cargo}<br>
-            ID: ${currentUser.id}<br>
-            NÍVEL: ${currentUser.nv}
-        `;
-
+        document.getElementById('employee-data-display').innerHTML = `NOME: ${currentUser.nome}<br>ID: ${currentUser.id}<br>NÍVEL: ${currentUser.nv}`;
         document.getElementById('final-btn').style.display = method === 'CARD' ? 'inline-block' : 'none';
         document.getElementById('scan-init-btn').style.display = method === 'MANUAL' ? 'inline-block' : 'none';
     }
@@ -347,19 +361,17 @@
     function triggerFaceScanUI() {
         closeModal();
         startCamera();
-        writeLog("INICIANDO SCAN BIOMÉTRICO...");
+        writeLog("COMPARANDO IMAGEM COM BANCO DE DADOS...");
         document.getElementById('scanner-line').style.display = 'block';
         document.getElementById('sim-controls').style.display = 'flex';
-        document.getElementById('webcam-view').style.filter = "none";
     }
 
     function simulateResult(isCorrect) {
         document.getElementById('scanner-line').style.display = 'none';
         document.getElementById('sim-controls').style.display = 'none';
-        document.getElementById('webcam-view').style.filter = "grayscale(1) brightness(0.7)";
-        if (isCorrect) { finalize(); } 
+        if (isCorrect) finalize();
         else {
-            writeLog("CRITICAL ERROR: BIOMETRIA FACIAL NÃO CORRESPONDE!", true);
+            writeLog("CONFLITO DE DADOS: IMAGEM NÃO CORRESPONDE AO REGISTRO!", true);
             stopCamera();
             document.getElementById('lock-ui').innerText = "❌ DENIED";
             setTimeout(() => { document.getElementById('lock-ui').innerText = "🔒 LOCKED"; }, 2000);
@@ -371,23 +383,17 @@
     function finalize() {
         document.getElementById('lock-ui').innerHTML = "🔓 UNLOCKED";
         document.getElementById('lock-ui').style.color = "var(--primary-green)";
-        document.getElementById('user-display').innerHTML = `USUÁRIO: ${currentUser.nome}<br>ACESSO NÍVEL ${currentUser.nv}`;
+        document.getElementById('user-display').innerHTML = `LOG: ${currentUser.nome}<br>ACESSO NÍVEL ${currentUser.nv}`;
         document.getElementById('btn-logoff').style.display = 'block';
-        document.getElementById('btn-glasses').style.display = 'block'; // Mostra botão de óculos
-        
-        if (currentUser.nv >= 2) {
-            document.getElementById('admin-panel').style.display = 'block';
-            updateAdminPanel();
-        }
-        writeLog(`ACESSO CONCEDIDO: BEM-VINDO ${currentUser.nome}`);
+        document.getElementById('btn-glasses').style.display = 'block';
+        if (currentUser.nv >= 2) document.getElementById('admin-panel').style.display = 'block';
+        writeLog(`VALIDAÇÃO CONCLUÍDA. BEM-VINDO, ${currentUser.nome}`);
         const history = document.getElementById('history-log');
-        history.innerHTML = `[${new Date().toLocaleTimeString()}] ${currentUser.id} IN<br>` + history.innerHTML;
-        resetIdleTimer();
+        history.innerHTML = `[${new Date().toLocaleTimeString()}] ${currentUser.id} ENTRADA<br>` + history.innerHTML;
     }
 
     function simulateGlassesRemoval() {
-        writeLog("ALERTA: ALTERAÇÃO BIOMÉTRICA DETECTADA (ÓCULOS REMOVIDOS).", true);
-        writeLog("SESSÃO INVALIDADA POR SEGURANÇA.", true);
+        writeLog("ALERTA: ALTERAÇÃO NOS DADOS ÓPTICOS. LOGOFF FORÇADO.", true);
         logout();
     }
 
@@ -395,21 +401,19 @@
         if(!currentUser) return;
         stopCamera();
         document.getElementById('admin-panel').style.display = 'none';
-        document.getElementById('btn-glasses').style.display = 'none'; // Esconde botão de óculos
+        document.getElementById('btn-glasses').style.display = 'none';
         document.getElementById('lock-ui').innerHTML = "🔒 LOCKED";
         document.getElementById('lock-ui').style.color = "red";
         document.getElementById('user-display').innerHTML = "";
         document.getElementById('btn-logoff').style.display = 'none';
         currentUser = null;
-        clearTimeout(idleTimer);
     }
 
-    function resetIdleTimer() {
-        clearTimeout(idleTimer);
-        if (currentUser) idleTimer = setTimeout(() => { writeLog("LOGOFF AUTOMÁTICO: INATIVIDADE DETECTADA", true); logout(); }, 120000);
+    function toggleCard(id) {
+        if (currentUser.nv === 2 && id === "ID-RR-3040") return;
+        CARD_STATUS[id] = !CARD_STATUS[id];
+        writeLog(`CARTÃO ${id} ${CARD_STATUS[id] ? 'REATIVADO' : 'BLOQUEADO'}.`);
     }
-    window.onmousemove = resetIdleTimer;
-    window.onkeydown = resetIdleTimer;
 </script>
 </body>
 </html>

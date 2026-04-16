@@ -42,14 +42,13 @@
             gap: 20px;
         }
 
-        h2 { font-size: 0.8rem; border-bottom: 1px solid #333; padding-bottom: 5px; margin: 0; letter-spacing: 2px; }
+        h2 { font-size: 0.8rem; border-bottom: 1px solid #333; padding-bottom: 5px; margin: 0; }
 
         .terminal-container {
             border: var(--border-style);
             background: black;
             display: flex;
             flex-direction: column;
-            position: relative;
         }
 
         #terminal-log {
@@ -58,7 +57,6 @@
             font-size: 0.8rem;
             line-height: 1.5;
             overflow-y: auto;
-            color: var(--primary-green);
         }
 
         .input-area {
@@ -72,28 +70,21 @@
             background: transparent;
             color: var(--primary-green);
             border: 1px solid var(--primary-green);
-            padding: 10px 20px;
+            padding: 10px;
             cursor: pointer;
-            font-weight: bold;
             width: 85%;
             margin-bottom: 10px;
-            transition: 0.3s;
-            text-transform: uppercase;
-            font-size: 0.7rem;
+            font-weight: bold;
         }
 
-        button:hover {
-            background: var(--primary-green);
-            color: black;
-            box-shadow: 0 0 10px var(--primary-green);
-        }
+        button:hover { background: var(--primary-green); color: black; }
 
-        /* --- MODAL --- */
+        /* MODAL */
         #modal-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.98);
+            background: rgba(0,0,0,0.95);
             z-index: 100;
             justify-content: center;
             align-items: center;
@@ -104,59 +95,32 @@
             border: 1px solid var(--primary-green);
             padding: 30px;
             text-align: center;
-            max-width: 400px;
-            width: 90%;
+            width: 350px;
         }
 
-        .card-selection {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        .card-item {
-            border: 1px solid #333;
-            padding: 10px;
-            cursor: pointer;
-            width: 100px;
-            font-size: 0.7rem;
-        }
-
-        .card-item:hover { border-color: var(--primary-green); color: var(--primary-green); }
-
-        .data-sheet {
-            text-align: left;
-            margin: 20px 0;
-            padding: 15px;
-            border: 1px solid #222;
-            font-size: 0.8rem;
-        }
-
-        .label { color: #555; display: block; font-size: 0.6rem; }
-
-        input[type="text"] {
+        input {
             background: #111;
-            border: 1px solid #333;
+            border: 1px solid var(--primary-green);
             color: var(--primary-green);
             padding: 10px;
-            width: 80%;
+            width: 90%;
             margin-bottom: 15px;
-            outline: none;
             text-align: center;
+            outline: none;
         }
 
-        /* Scanner */
         #face-scanner {
             width: 100%; height: 120px; border: 1px solid #222;
             display: flex; align-items: center; justify-content: center;
             position: relative; background: #050505; overflow: hidden;
         }
+
         .scanning-line {
             width: 100%; height: 2px; background: var(--primary-green);
             position: absolute; top: 0; animation: scan 2s infinite linear;
-            display: none; box-shadow: 0 0 8px var(--primary-green);
+            display: none;
         }
+
         @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
     </style>
 </head>
@@ -165,63 +129,61 @@
 <div id="modal-overlay">
     <div id="step-card" class="modal-content" style="display: none;">
         <h2>APROXIME O CARTÃO</h2>
-        <div class="card-selection">
-            <div class="card-item" onclick="processLogin('ID-HT-1020', 'CARD')">HT-1020<br>HEITOR</div>
-            <div class="card-item" onclick="processLogin('ID-BS-2030', 'CARD')">BS-2030<br>BEATRIZ</div>
-            <div class="card-item" onclick="processLogin('ID-RR-3040', 'CARD')">RR-3040<br>RICARDO</div>
-        </div>
-        <button onclick="closeModal()" style="margin-top: 20px; border: none; color: #444;">CANCELAR</button>
+        <button onclick="processLogin('ID-HT-1020', 'CARD')">HEITOR (NV 1)</button>
+        <button onclick="processLogin('ID-BS-2030', 'CARD')">BEATRIZ (NV 2)</button>
+        <button onclick="processLogin('ID-RR-3040', 'CARD')">RICARDO (NV 3)</button>
+        <button onclick="closeModal()" style="border:none; color: #555;">FECHAR</button>
     </div>
 
     <div id="step-manual" class="modal-content" style="display: none;">
-        <h2>LOGIN MANUAL (ID)</h2>
-        <input type="text" id="manual-id-input" placeholder="DIGITE SEU ID">
-        <button onclick="checkManualID()">VERIFICAR ID</button>
-        <button onclick="closeModal()" style="border: none; color: #444;">VOLTAR</button>
+        <h2>LOGIN POR ID</h2>
+        <p style="font-size: 0.6rem;">DIGITE O CÓDIGO (EX: ID-RR-3040)</p>
+        <input type="text" id="manual-id-input" placeholder="ID-XXXX-0000">
+        <button onclick="checkManualID()">VERIFICAR</button>
+        <button onclick="closeModal()" style="border:none; color: #555;">VOLTAR</button>
     </div>
 
     <div id="step-confirm" class="modal-content" style="display: none;">
-        <h2 id="confirm-title">VERIFICANDO...</h2>
-        <div id="employee-data" class="data-sheet"></div>
-        <button id="final-confirm-btn">CONFIRMAR E ENTRAR</button>
-        <button onclick="closeModal()" style="border: none; color: #444;">CANCELAR</button>
+        <h2 id="confirm-title">DADOS DO PERFIL</h2>
+        <div id="employee-data" style="text-align: left; font-size: 0.8rem; border: 1px dashed; padding: 10px; margin-bottom: 15px;"></div>
+        <button onclick="executeAuth()">CONFIRMAR ENTRADA</button>
     </div>
 </div>
 
 <div class="main-container">
     <div class="panel">
         <h2>SYSTEM</h2>
-        <div style="font-size: 0.6rem;">Status: <span style="color:var(--primary-green)">Online</span></div>
-        <div id="history-log" style="font-size: 0.6rem; margin-top: 15px; color: #555;"></div>
+        <div id="history-log" style="font-size: 0.6rem;"></div>
     </div>
 
     <div class="terminal-container">
         <div id="terminal-log">
-            > NEXUS SECURITY OS <br>
-            > AGUARDANDO COMANDO DE ENTRADA...
+            > SISTEMA PRONTO... <br>
+            > AGUARDANDO LOGIN.
         </div>
         <div class="input-area">
             <button onclick="openModal('CARD')">💳 LER CARTÃO</button>
-            <button onclick="openModal('MANUAL')">⌨️ ENTRAR COM ID</button>
+            <button onclick="openModal('MANUAL')">⌨️ DIGITAR ID</button>
         </div>
     </div>
 
     <div class="panel">
-        <h2>RECOGNITION</h2>
+        <h2>SECURITY</h2>
         <div id="face-scanner">
             <div class="scanning-line" id="scanner-line"></div>
-            <span id="scan-status" style="font-size: 0.5rem; color: #333;">SENSOR INATIVO</span>
+            <span id="scan-status" style="font-size: 0.6rem;">AGUARDANDO...</span>
         </div>
-        <div id="lock-ui" style="color: red; text-align: center; margin-top: 10px; font-size: 0.8rem;">🔒 LOCKED</div>
-        <div id="user-display" style="font-size: 0.6rem; margin-top: 10px; line-height: 1.4;"></div>
+        <div id="lock-ui" style="color: red; text-align: center; margin-top: 10px;">🔒 LOCKED</div>
+        <div id="user-display" style="font-size: 0.6rem;"></div>
     </div>
 </div>
 
 <script>
+    // LISTA DE IDs VÁLIDOS
     const USERS = {
-        "ID-HT-1020": { nome: "HEITOR TORRES", cargo: "PRODUÇÃO", id: "HT-1020", nivel: "1" },
-        "ID-BS-2030": { nome: "BEATRIZ SOARES", cargo: "GERENTE", id: "BS-2030", nivel: "2" },
-        "ID-RR-3040": { nome: "RICARDO ROCHA", cargo: "CHEFE", id: "RR-3040", nivel: "3" }
+        "ID-HT-1020": { nome: "HEITOR TORRES", cargo: "PRODUÇÃO", nv: "1" },
+        "ID-BS-2030": { nome: "BEATRIZ SOARES", cargo: "GERENTE", nv: "2" },
+        "ID-RR-3040": { nome: "RICARDO ROCHA", cargo: "CHEFE", nv: "3" }
     };
 
     let currentUser = null;
@@ -236,74 +198,65 @@
 
     function closeModal() {
         document.getElementById('modal-overlay').style.display = 'none';
-        document.getElementById('manual-id-input').value = '';
     }
 
+    // ESSA É A FUNÇÃO QUE VERIFICA O QUE VOCÊ DIGITA
     function checkManualID() {
-        const val = document.getElementById('manual-id-input').value.toUpperCase();
-        if(USERS[val]) {
-            processLogin(val, 'MANUAL');
+        const inputVal = document.getElementById('manual-id-input').value.trim().toUpperCase();
+        
+        if (USERS[inputVal]) {
+            processLogin(inputVal, 'MANUAL');
         } else {
-            alert("ID NÃO ENCONTRADO NO SISTEMA");
+            alert("ID INCORRETO! Tente: ID-HT-1020, ID-BS-2030 ou ID-RR-3040");
         }
     }
 
-    function processLogin(userId, method) {
-        currentUser = USERS[userId];
+    function processLogin(id, method) {
+        currentUser = USERS[id];
+        currentUser.idCod = id; // Salva o ID usado
         loginMethod = method;
 
         document.getElementById('step-card').style.display = 'none';
         document.getElementById('step-manual').style.display = 'none';
         document.getElementById('step-confirm').style.display = 'block';
 
-        document.getElementById('confirm-title').innerText = method === 'CARD' ? "CARTÃO DETECTADO" : "ID VALIDADO";
         document.getElementById('employee-data').innerHTML = `
-            <span class="label">FUNCIONÁRIO:</span> ${currentUser.nome}<br>
-            <span class="label">CARGO:</span> ${currentUser.cargo}<br>
-            <span class="label">REGISTRO:</span> ${currentUser.id}
+            NOME: ${currentUser.nome}<br>
+            CARGO: ${currentUser.cargo}<br>
+            ID: ${id}<br>
+            NÍVEL: ${currentUser.nv}
         `;
-
-        document.getElementById('final-confirm-btn').onclick = function() {
-            executeAuth();
-        };
     }
 
     function executeAuth() {
         closeModal();
         const log = document.getElementById('terminal-log');
-        log.innerHTML += `<br>> AUTENTICANDO: ${currentUser.nome}...`;
+        log.innerHTML += `<br>> VALIDANDO ${currentUser.idCod}...`;
 
         if (loginMethod === 'MANUAL') {
-            // Se for ID Manual, precisa do Scanner Facial
-            log.innerHTML += `<br>> LOGIN MANUAL DETECTADO. ATIVANDO BIOMETRIA...`;
+            // LOGIN POR ID ATIVA SCANNER
             document.getElementById('scanner-line').style.display = 'block';
-            document.getElementById('scan-status').innerText = 'SCANNING FACE...';
-            document.getElementById('scan-status').style.color = 'var(--primary-green)';
-
+            document.getElementById('scan-status').innerText = 'ESCANEANDO FACE...';
+            
             setTimeout(() => {
-                finalize();
                 document.getElementById('scanner-line').style.display = 'none';
-                document.getElementById('scan-status').innerText = 'FACE MATCHED';
-            }, 2500);
+                document.getElementById('scan-status').innerText = 'MATCH!';
+                finalize();
+            }, 2000);
         } else {
-            // Se for Cartão, entra direto
-            log.innerHTML += `<br>> ACESSO VIA NFC CONFIRMADO.`;
+            // CARTÃO ENTRA DIRETO
             finalize();
         }
     }
 
     function finalize() {
         document.getElementById('lock-ui').innerHTML = "🔓 UNLOCKED";
-        document.getElementById('lock-ui').style.color = "var(--primary-green)";
-        document.getElementById('user-display').innerHTML = `
-            PERFIL ATIVO: ${currentUser.nome}<br>
-            NÍVEL DE ACESSO: 0${currentUser.nivel}<br>
-            SISTEMA LIBERADO.
-        `;
-        document.getElementById('terminal-log').innerHTML += `<br>> ACESSO CONCEDIDO. BEM-VINDO.`;
+        document.getElementById('lock-ui').style.color = "#00ff41";
+        document.getElementById('user-display').innerHTML = `USUÁRIO: ${currentUser.nome}<br>ACESSO NÍVEL ${currentUser.nv} LIBERADO.`;
+        document.getElementById('terminal-log').innerHTML += `<br>> ACESSO CONCEDIDO.`;
         
         const history = document.getElementById('history-log');
-        history.innerHTML = `[${new Date().toLocaleTimeString()}] ${currentUser.id} IN<br>` + history.innerHTML;
+        history.innerHTML = `[${new Date().toLocaleTimeString()}] ${currentUser.idCod} OK<br>` + history.innerHTML;
     }
 </script>
 </body>

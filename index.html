@@ -78,7 +78,6 @@
             font-weight: bold;
             text-transform: uppercase;
             font-size: 0.7rem;
-            transition: 0.1s;
         }
 
         button:hover { background: var(--primary-green); color: black; }
@@ -228,6 +227,8 @@
         <div id="lock-ui" style="color: red; text-align: center; margin-top: 10px;">🔒 LOCKED</div>
         <div id="user-display" style="font-size: 0.6rem; line-height: 1.4;"></div>
         
+        <button id="btn-glasses" onclick="simulateGlassesRemoval()" style="display:none; border-color: orange; color: orange; font-size: 0.6rem;">👓 REMOVER ÓCULOS</button>
+        
         <button id="btn-logoff" onclick="logout()" style="display:none; margin-top: auto; border-color: #555; color: #555; font-size: 0.6rem;">ENCERRAR SESSÃO</button>
     </div>
 </div>
@@ -372,6 +373,8 @@
         document.getElementById('lock-ui').style.color = "var(--primary-green)";
         document.getElementById('user-display').innerHTML = `USUÁRIO: ${currentUser.nome}<br>ACESSO NÍVEL ${currentUser.nv}`;
         document.getElementById('btn-logoff').style.display = 'block';
+        document.getElementById('btn-glasses').style.display = 'block'; // Mostra botão de óculos
+        
         if (currentUser.nv >= 2) {
             document.getElementById('admin-panel').style.display = 'block';
             updateAdminPanel();
@@ -382,11 +385,17 @@
         resetIdleTimer();
     }
 
+    function simulateGlassesRemoval() {
+        writeLog("ALERTA: ALTERAÇÃO BIOMÉTRICA DETECTADA (ÓCULOS REMOVIDOS).", true);
+        writeLog("SESSÃO INVALIDADA POR SEGURANÇA.", true);
+        logout();
+    }
+
     function logout() {
         if(!currentUser) return;
-        writeLog("SESSÃO ENCERRADA PELO USUÁRIO.");
         stopCamera();
         document.getElementById('admin-panel').style.display = 'none';
+        document.getElementById('btn-glasses').style.display = 'none'; // Esconde botão de óculos
         document.getElementById('lock-ui').innerHTML = "🔒 LOCKED";
         document.getElementById('lock-ui').style.color = "red";
         document.getElementById('user-display').innerHTML = "";

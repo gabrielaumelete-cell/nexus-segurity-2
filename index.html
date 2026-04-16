@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Security Assistant</title>
+    <title>Nexus Security Assistant - FULL OS</title>
     <style>
         :root {
             --primary-green: #00ff41;
@@ -99,7 +99,7 @@
             border: 1px solid var(--primary-green);
             padding: 30px;
             text-align: center;
-            width: 500px; /* Aumentado para caber o chefe */
+            width: 550px;
         }
 
         input {
@@ -131,10 +131,10 @@
             display: none;
         }
 
-        /* BANCO DE DADOS GESTÃO */
+        /* DB GRID */
         .db-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr; /* Três colunas agora */
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 10px;
             margin-top: 15px;
         }
@@ -142,26 +142,21 @@
         .db-item {
             border: 1px solid #333;
             padding: 8px;
-            font-size: 0.55rem;
+            font-size: 0.5rem;
             background: #050505;
         }
 
         .captured-photo {
-            width: 100%;
-            height: 70px;
-            background: #222;
-            margin-bottom: 5px;
-            object-fit: cover;
-            border: 1px solid #444;
+            width: 100%; height: 60px;
+            background: #222; margin-bottom: 5px;
+            object-fit: cover; border: 1px solid #444;
         }
 
-        #capture-zone {
+        #admin-panel {
             display: none;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 15px;
             border-top: 1px solid #333;
             padding-top: 10px;
+            margin-top: auto;
         }
     </style>
 </head>
@@ -170,92 +165,98 @@
 <div id="modal-overlay">
     <div id="step-db-auth" class="modal-content" style="display: none;">
         <h2>ACESSO RESTRITO - DATABASE</h2>
-        <input type="password" id="db-pass-input" placeholder="CHAVE MESTRA">
-        <button onclick="verifyDBPass()">ACESSAR REGISTROS</button>
-        <button onclick="closeModal()" style="border:none; color:#555">CANCELAR</button>
+        <input type="password" id="db-pass-input" placeholder="SENHA">
+        <button onclick="verifyDBPass()">LOGAR</button>
+        <button onclick="closeModal()" style="border:none; color:#555">SAIR</button>
     </div>
 
     <div id="step-db-view" class="modal-content" style="display: none;">
-        <h2>SISTEMA DE ARQUIVOS ÓPTICOS</h2>
+        <h2>BANCO DE FOTOS REGISTRADAS</h2>
         <div class="db-grid">
             <div class="db-item">
-                <img id="photo-ht" class="captured-photo" src="" style="display:none">
-                <div id="placeholder-ht" style="height:70px; line-height:70px; color:#222">[ SEM DADOS ]</div>
-                <button onclick="prepareCapture('ID-HT-1020')" style="width:100%; font-size:0.4rem">REGISTRAR</button>
-                HEITOR (NV 1)
+                <img id="photo-ht" class="captured-photo" style="display:none">
+                <div id="placeholder-ht" style="height:60px; color:#222">[ SEM FOTO ]</div>
+                <button onclick="prepareCapture('ID-HT-1020')" style="font-size:0.4rem">FOTO</button>
+                HEITOR
             </div>
             <div class="db-item">
-                <img id="photo-bs" class="captured-photo" src="" style="display:none">
-                <div id="placeholder-bs" style="height:70px; line-height:70px; color:#222">[ SEM DADOS ]</div>
-                <button onclick="prepareCapture('ID-BS-2030')" style="width:100%; font-size:0.4rem">REGISTRAR</button>
-                BEATRIZ (NV 2)
+                <img id="photo-bs" class="captured-photo" style="display:none">
+                <div id="placeholder-bs" style="height:60px; color:#222">[ SEM FOTO ]</div>
+                <button onclick="prepareCapture('ID-BS-2030')" style="font-size:0.4rem">FOTO</button>
+                BEATRIZ
             </div>
             <div class="db-item">
-                <img id="photo-rr" class="captured-photo" src="" style="display:none">
-                <div id="placeholder-rr" style="height:70px; line-height:70px; color:#222">[ SEM DADOS ]</div>
-                <button onclick="prepareCapture('ID-RR-3040')" style="width:100%; font-size:0.4rem">REGISTRAR</button>
-                RICARDO (NV 3)
+                <img id="photo-rr" class="captured-photo" style="display:none">
+                <div id="placeholder-rr" style="height:60px; color:#222">[ SEM FOTO ]</div>
+                <button onclick="prepareCapture('ID-RR-3040')" style="font-size:0.4rem">FOTO</button>
+                RICARDO
             </div>
         </div>
-
-        <div id="capture-zone">
-            <div style="width:200px; height:130px; border:1px solid var(--primary-green); overflow:hidden">
+        <div id="capture-zone" style="display:none; margin-top:15px; border-top: 1px solid #333; padding-top:10px;">
+            <div style="width:200px; height:150px; border:1px solid var(--primary-green); margin:0 auto; overflow:hidden">
                 <video id="db-webcam" autoplay playsinline style="width:100%; height:100%; object-fit:cover; transform: scaleX(-1);"></video>
             </div>
             <button onclick="takeSnapshot()" style="margin-top:10px; background:var(--primary-green); color:black">SALVAR REGISTRO</button>
         </div>
-        <button onclick="closeModal()" style="margin-top:20px; color:#555">SAIR</button>
+        <button onclick="closeModal()" style="margin-top:20px;">FECHAR</button>
     </div>
 
     <div id="step-card" class="modal-content" style="display: none;">
-        <h2>LEITORA DE CARTÃO</h2>
-        <button onclick="processLogin('ID-HT-1020')">ID-HT-1020 (HEITOR)</button>
-        <button onclick="processLogin('ID-BS-2030')">ID-BS-2030 (BEATRIZ)</button>
-        <button onclick="processLogin('ID-RR-3040')">ID-RR-3040 (RICARDO)</button>
-        <button onclick="closeModal()" style="border:none; color:#555">CANCELAR</button>
+        <h2>LEITOR DE CARTÃO</h2>
+        <button onclick="processLogin('ID-HT-1020')">ID-HT-1020</button>
+        <button onclick="processLogin('ID-BS-2030')">ID-BS-2030</button>
+        <button onclick="processLogin('ID-RR-3040')">ID-RR-3040</button>
+        <button onclick="closeModal()" style="border:none; color:#555">VOLTAR</button>
     </div>
 
     <div id="step-id-manual" class="modal-content" style="display: none;">
-        <h2>TERMINAL DE ID</h2>
-        <input type="text" id="input-manual-id" placeholder="EX: ID-RR-3040">
-        <button onclick="checkManualID()">PESQUISAR ID</button>
+        <h2>DIGITAR ID</h2>
+        <input type="text" id="manual-id-input" placeholder="EX: ID-RR-3040">
+        <button onclick="checkManualID()">BUSCAR</button>
         <button onclick="closeModal()" style="border:none; color:#555">VOLTAR</button>
     </div>
 
     <div id="step-confirm" class="modal-content" style="display: none;">
-        <h2>VALIDAÇÃO DE IDENTIDADE</h2>
-        <div id="employee-data-display" style="text-align: left; font-size: 0.75rem; border: 1px dashed var(--primary-green); padding: 15px; margin-bottom: 15px; background:#050505"></div>
-        <button id="scan-init-btn" onclick="triggerFaceScanUI()">INICIAR SCANNER ÓPTICO</button>
+        <h2>VALIDAÇÃO</h2>
+        <div id="employee-data-display" style="text-align:left; font-size:0.75rem; border:1px dashed var(--primary-green); padding:15px; margin-bottom:15px;"></div>
+        <button id="scan-init-btn" onclick="triggerFaceScanUI()">ABRIR SCANNER ÓPTICO</button>
         <button onclick="closeModal()" style="border:none; color:#555">CANCELAR</button>
     </div>
 </div>
 
 <div class="main-container">
     <div class="panel">
-        <h2>LOG DE ACESSOS</h2>
-        <div id="history-log" style="font-size: 0.5rem;"></div>
+        <h2>HISTORY</h2>
+        <div id="history-log" style="font-size:0.5rem; overflow-y:auto; max-height:150px;"></div>
+        
+        <div id="admin-panel">
+            <h2 style="font-size:0.6rem;">ADMIN OVERRIDE</h2>
+            <button id="adm-ht" style="font-size:0.5rem;" onclick="toggleCard('ID-HT-1020')">HT: ON</button>
+            <button id="adm-bs" style="font-size:0.5rem;" onclick="toggleCard('ID-BS-2030')">BS: ON</button>
+            <button id="adm-rr" style="font-size:0.5rem;" onclick="toggleCard('ID-RR-3040')">RR: ON</button>
+        </div>
     </div>
 
     <div class="terminal-container">
-        <div id="terminal-log">> SISTEMA ONLINE...</div>
+        <div id="terminal-log">> AGUARDANDO COMANDO...</div>
         <div class="input-area">
             <button onclick="openModal('CARD')">💳 CARTÃO</button>
             <button onclick="openModal('ID')">⌨️ DIGITAR ID</button>
-            <button onclick="openModal('DB')" style="border-color:#444; color:#444">🗄️ DATABASE</button>
+            <button onclick="openModal('DB')">🗄️ DATABASE</button>
         </div>
     </div>
 
     <div class="panel">
-        <h2>SCANNER STATUS</h2>
+        <h2>SCANNER</h2>
         <div id="camera-container">
             <video id="webcam-view" autoplay playsinline></video>
             <div id="cam-placeholder" style="color:#222">[ OFFLINE ]</div>
         </div>
         <div id="sim-controls" style="display:none; justify-content:space-between; margin-top:10px">
-            <button onclick="finalize()" style="width:48%">CONCORDAR</button>
-            <button onclick="logout()" class="btn-error" style="width:48%">RECUSAR</button>
+            <button onclick="finalize()" style="width:48%">OK</button>
+            <button onclick="logout()" class="btn-error" style="width:48%">FAIL</button>
         </div>
-        <div id="lock-ui" style="color:red; text-align:center; margin-top:10px">🔒 SISTEMA TRANCADO</div>
+        <div id="lock-ui" style="color:red; text-align:center; margin-top:10px">🔒 LOCKED</div>
         <button id="btn-logoff" onclick="logout()" style="display:none; margin-top:auto">LOGOFF</button>
     </div>
 </div>
@@ -266,11 +267,12 @@
     let camStream = null;
     let targetId = '';
     let currentUser = null;
+    let CARD_STATUS = { "ID-HT-1020": true, "ID-BS-2030": true, "ID-RR-3040": true };
 
     const USERS = {
-        "ID-HT-1020": { nome: "HEITOR TORRES", key: "ht" },
-        "ID-BS-2030": { nome: "BEATRIZ SOARES", key: "bs" },
-        "ID-RR-3040": { nome: "RICARDO ROCHA", key: "rr" }
+        "ID-HT-1020": { nome: "HEITOR TORRES", key: "ht", nv: 1 },
+        "ID-BS-2030": { nome: "BEATRIZ SOARES", key: "bs", nv: 2 },
+        "ID-RR-3040": { nome: "RICARDO ROCHA", key: "rr", nv: 3 }
     };
 
     function writeLog(msg, isError = false) {
@@ -288,6 +290,7 @@
                 document.getElementById('placeholder-' + key).style.display = 'none';
             }
         });
+        updateAdminButtons();
     };
 
     function openModal(type) {
@@ -308,32 +311,58 @@
         if (document.getElementById('db-pass-input').value === "senha1234") {
             document.getElementById('step-db-auth').style.display = 'none';
             document.getElementById('step-db-view').style.display = 'block';
-            writeLog("ACESSO AO DB CONCEDIDO.");
+            writeLog("DATABASE LIBERADA.");
         } else {
-            writeLog("CHAVE INCORRETA.", true);
+            writeLog("ACESSO AO DB NEGADO.", true);
             closeModal();
         }
     }
 
+    function toggleCard(id) {
+        if (currentUser && currentUser.nv === 2 && id === "ID-RR-3040") {
+            writeLog("ERRO: GERENTES NÃO BLOQUEIAM O CHEFE.", true);
+            return;
+        }
+        CARD_STATUS[id] = !CARD_STATUS[id];
+        writeLog(`${id} ${CARD_STATUS[id] ? 'ATIVADO' : 'DESATIVADO'}.`);
+        updateAdminButtons();
+    }
+
+    function updateAdminButtons() {
+        for (let id in CARD_STATUS) {
+            const key = id.split('-')[1].toLowerCase();
+            const btn = document.getElementById('adm-' + key);
+            if (btn) {
+                btn.innerText = `${key.toUpperCase()}: ${CARD_STATUS[id] ? 'ON' : 'OFF'}`;
+                btn.style.color = CARD_STATUS[id] ? 'var(--primary-green)' : '#444';
+            }
+        }
+    }
+
     function checkManualID() {
-        const id = document.getElementById('input-manual-id').value.toUpperCase().trim();
+        const id = document.getElementById('manual-id-input').value.toUpperCase().trim();
         if (USERS[id]) processLogin(id);
-        else writeLog("ID NÃO ENCONTRADO.", true);
+        else writeLog("ID INVÁLIDO.", true);
     }
 
     function processLogin(id) {
+        if (!CARD_STATUS[id]) {
+            writeLog(`ALERTA: CARTÃO ${id} BLOQUEADO!`, true);
+            closeModal();
+            return;
+        }
         currentUser = USERS[id];
         currentUser.id = id;
         document.getElementById('step-card').style.display = 'none';
         document.getElementById('step-id-manual').style.display = 'none';
         document.getElementById('step-confirm').style.display = 'block';
-        document.getElementById('employee-data-display').innerHTML = `FUNCIONÁRIO: ${currentUser.nome}<br>REGISTRO: ${currentUser.id}<br>CARGO: CHEFIA/OPERACIONAL`;
+        document.getElementById('employee-data-display').innerHTML = `NOME: ${currentUser.nome}<br>ID: ${currentUser.id}<br>NÍVEL: ${currentUser.nv}`;
     }
 
     async function triggerFaceScanUI() {
         const hasPhoto = localStorage.getItem('photo-' + currentUser.key);
         if(!hasPhoto) {
-            writeLog("ERRO: FUNCIONÁRIO SEM REGISTRO FOTOGRÁFICO!", true);
+            writeLog("ERRO: SEM FOTO NO DB!", true);
             return;
         }
         closeModal();
@@ -343,7 +372,7 @@
         mainVid.style.display = 'block';
         document.getElementById('cam-placeholder').style.display = 'none';
         document.getElementById('sim-controls').style.display = 'flex';
-        writeLog(`IA: VALIDANDO IMAGEM DE ${currentUser.nome}...`);
+        writeLog(`IA: VALIDANDO SCAN ÓPTICO...`);
     }
 
     async function prepareCapture(id) {
@@ -362,12 +391,11 @@
         context.scale(-1, 1);
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         const dataURL = canvas.toDataURL('image/png');
-        const userKey = USERS[targetId].key;
-        localStorage.setItem('photo-' + userKey, dataURL);
-        const img = document.getElementById('photo-' + userKey);
+        localStorage.setItem('photo-' + USERS[targetId].key, dataURL);
+        const img = document.getElementById('photo-' + USERS[targetId].key);
         img.src = dataURL; img.style.display = 'block';
-        document.getElementById('placeholder-' + userKey).style.display = 'none';
-        writeLog(`REGISTRO ATUALIZADO: ${targetId}`);
+        document.getElementById('placeholder-' + USERS[targetId].key).style.display = 'none';
+        writeLog(`FOTO DE ${targetId} SALVA.`);
         document.getElementById('capture-zone').style.display = 'none';
         stopCamera();
     }
@@ -377,11 +405,12 @@
     }
 
     function finalize() {
-        document.getElementById('lock-ui').innerHTML = "🔓 ACESSO LIBERADO";
+        document.getElementById('lock-ui').innerHTML = "🔓 UNLOCKED";
         document.getElementById('lock-ui').style.color = "var(--primary-green)";
         document.getElementById('btn-logoff').style.display = 'block';
         document.getElementById('sim-controls').style.display = 'none';
-        writeLog(`SESSÃO INICIADA: ${currentUser.nome}`);
+        if (currentUser.nv >= 2) document.getElementById('admin-panel').style.display = 'block';
+        writeLog(`BEM-VINDO, ${currentUser.nome}`);
         const history = document.getElementById('history-log');
         history.innerHTML = `[${new Date().toLocaleTimeString()}] ${currentUser.id} IN<br>` + history.innerHTML;
     }

@@ -1,6 +1,4 @@
-            
-
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -76,7 +74,6 @@
             cursor: pointer;
             font-weight: bold;
             width: 85%;
-            margin-top: 5px;
         }
 
         /* --- MODAL DE CARTÕES --- */
@@ -84,7 +81,7 @@
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             z-index: 100;
             justify-content: center;
             align-items: center;
@@ -100,7 +97,7 @@
         .card-item {
             border: 2px solid var(--primary-green);
             padding: 20px;
-            width: 150px;
+            width: 160px;
             text-align: center;
             cursor: pointer;
             transition: 0.3s;
@@ -110,58 +107,41 @@
         .card-item:hover {
             background: var(--primary-green);
             color: black;
-            transform: translateY(-5px);
+            transform: scale(1.05);
         }
 
-        .card-item i { display: block; font-size: 2rem; margin-bottom: 10px; }
-
-        /* --- RESTO DOS ESTILOS --- */
-        #face-scanner {
-            width: 100%; height: 150px; border: 1px solid #333;
-            display: flex; align-items: center; justify-content: center;
-            position: relative; background: #050505;
-        }
-
-        .scanning-line {
-            width: 100%; height: 2px; background: var(--primary-green);
-            position: absolute; top: 0; animation: scan 2s infinite linear;
-            box-shadow: 0 0 15px var(--primary-green); display: none;
-        }
-
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
-        .blink { animation: blinker 1s linear infinite; }
-        @keyframes blinker { 50% { opacity: 0; } }
+        .card-item span { display: block; font-size: 0.6rem; margin-top: 5px; opacity: 0.8; }
     </style>
 </head>
 <body>
 
 <div id="modal-cartoes">
-    <h2>SELECIONE O CARTÃO DE ACESSO</h2>
+    <h2 style="color: var(--primary-green); border: none;">APROXIME O CARTÃO NO LEITOR</h2>
     <div class="card-selection">
-        <div class="card-item" onclick="selectCard('ID-HT-1020')">
-            <div>NV 1</div>
-            <strong>HEITOR</strong>
-            <div style="font-size: 0.6rem;">PRODUÇÃO</div>
+        <div class="card-item" onclick="accessSystem('ID-HT-1020')">
+            <strong>NV 1</strong>
+            <div>HEITOR</div>
+            <span>ID: HT-1020</span>
         </div>
-        <div class="card-item" onclick="selectCard('ID-BS-2030')">
-            <div>NV 2</div>
-            <strong>BEATRIZ</strong>
-            <div style="font-size: 0.6rem;">GERENTE</div>
+        <div class="card-item" onclick="accessSystem('ID-BS-2030')">
+            <strong>NV 2</strong>
+            <div>BEATRIZ</div>
+            <span>ID: BS-2030</span>
         </div>
-        <div class="card-item" onclick="selectCard('ID-RR-3040')">
-            <div>NV 3</div>
-            <strong>RICARDO</strong>
-            <div style="font-size: 0.6rem;">CHEFE</div>
+        <div class="card-item" onclick="accessSystem('ID-RR-3040')">
+            <strong>NV 3</strong>
+            <div>RICARDO</div>
+            <span>ID: RR-3040</span>
         </div>
     </div>
-    <button onclick="closeModal()" style="width: auto; margin-top: 30px; background: #444; color: white;">CANCELAR</button>
+    <button onclick="closeModal()" style="width: auto; margin-top: 30px; background: #333; color: #999;">VOLTAR</button>
 </div>
 
 <div class="main-container">
     <div class="panel">
         <div>
             <h2>SYSTEM STATUS</h2>
-            <div style="font-size: 0.7rem;">MODO: <span style="color:var(--primary-green)">ONLINE</span></div>
+            <div style="font-size: 0.7rem; margin-top:10px;">ENCRYPTION: <span style="color:var(--primary-green)">ACTIVE</span></div>
         </div>
         <div>
             <h2>ACCESS LOGS</h2>
@@ -171,81 +151,91 @@
 
     <div class="terminal-container">
         <div id="terminal-log">
-            > TERMINAL // STAGE 01 <br>
-            > BIOS_STATUS: OK <br>
-            > WAITING_FOR_INPUT...
+            > NEXUS SECURITY ASSISTANT v2.0 <br>
+            > AGUARDANDO AUTENTICAÇÃO...
         </div>
         <div class="input-area">
             <button onclick="openModal()">💳 LER CARTÃO</button>
-            <div style="font-size: 0.6rem; margin-top: 10px; color: #444;">UNIFIED SECURITY INTERFACE</div>
         </div>
     </div>
 
     <div class="panel">
         <div>
-            <h2>RECONHECIMENTO</h2>
-            <div id="face-scanner">
-                <div class="scanning-line" id="scanner-line"></div>
-                <span id="scan-text" style="font-size: 0.6rem;">AGUARDANDO...</span>
-            </div>
-        </div>
-        <div>
-            <h2>SECURITY STATUS</h2>
-            <div id="lock-status" style="color: red;">🔒 LOCKED</div>
-            <div id="user-info" style="font-size: 0.7rem; margin-top: 10px;"></div>
+            <h2>SECURITY</h2>
+            <div style="font-size: 2rem; text-align: center; margin-top: 20px;">🔒</div>
+            <div style="text-align: center; font-size: 0.7rem; color: red;">SISTEMA BLOQUEADO</div>
         </div>
     </div>
 </div>
 
 <script>
     const USERS = {
-        "ID-HT-1020": { nome: "Heitor Torres", cargo: "PRODUÇÃO", nv: 1 },
-        "ID-BS-2030": { nome: "Beatriz Soares", cargo: "GERENTE", nv: 2 },
-        "ID-RR-3040": { nome: "Ricardo Rocha", cargo: "CHEFE", nv: 3 }
+        "ID-HT-1020": { nome: "HEITOR TORRES", cargo: "PRODUÇÃO", id: "HT-1020", nivel: "1" },
+        "ID-BS-2030": { nome: "BEATRIZ SOARES", cargo: "GERENTE", id: "BS-2030", nivel: "2" },
+        "ID-RR-3040": { nome: "RICARDO ROCHA", cargo: "CHEFE", id: "RR-3040", nivel: "3" }
     };
 
     function openModal() { document.getElementById('modal-cartoes').style.display = 'flex'; }
     function closeModal() { document.getElementById('modal-cartoes').style.display = 'none'; }
 
-    function selectCard(id) {
+    function accessSystem(userId) {
+        const user = USERS[userId];
         closeModal();
-        startAuth(USERS[id]);
-    }
-
-    function addLog(text) {
+        
+        // 1. Adiciona log no terminal principal
         const log = document.getElementById('terminal-log');
-        log.innerHTML += `<br>> ${text}`;
-        log.scrollTop = log.scrollHeight;
-    }
+        log.innerHTML += `<br>> ACESSO SOLICITADO POR: ${user.id}`;
+        log.innerHTML += `<br>> REDIRECIONANDO PARA DASHBOARD PRIVADO...`;
 
-    function startAuth(user) {
-        addLog(`CARTÃO LIDO: ${user.nome}`);
-        addLog("INICIANDO SCANNER FACIAL...");
+        // 2. Abre nova aba com os dados
+        const novaAba = window.open('', '_blank');
         
-        document.getElementById('scanner-line').style.display = "block";
-        document.getElementById('scan-text').innerText = "ESCANEANDO...";
-        document.getElementById('scan-text').classList.add("blink");
+        // Conteúdo da nova aba
+        const htmlConteudo = `
+            <html>
+            <head>
+                <title>PERFIL: ${user.nome}</title>
+                <style>
+                    body { 
+                        background: #0a0a0a; 
+                        color: #00ff41; 
+                        font-family: 'Courier New', monospace; 
+                        display: flex; 
+                        justify-content: center; 
+                        align-items: center; 
+                        height: 100vh; 
+                        margin: 0;
+                        text-transform: uppercase;
+                    }
+                    .box { 
+                        border: 2px solid #00ff41; 
+                        padding: 40px; 
+                        background: #111; 
+                        box-shadow: 0 0 20px rgba(0,255,65,0.2);
+                        min-width: 300px;
+                    }
+                    h1 { border-bottom: 1px solid #00ff41; padding-bottom: 10px; font-size: 1.2rem; }
+                    .info { margin: 15px 0; font-size: 0.9rem; }
+                    .label { color: #666; font-size: 0.7rem; display: block; }
+                </style>
+            </head>
+            <body>
+                <div class="box">
+                    <h1>DADOS DO FUNCIONÁRIO</h1>
+                    <div class="info"><span class="label">NOME COMPLETO:</span> ${user.nome}</div>
+                    <div class="info"><span class="label">CARGO:</span> ${user.cargo}</div>
+                    <div class="info"><span class="label">ID DE ACESSO:</span> ${user.id}</div>
+                    <div class="info"><span class="label">NÍVEL DE SEGURANÇA:</span> 0${user.nivel}</div>
+                    <div style="margin-top: 20px; font-size: 0.6rem; color: #00ff41; border-top: 1px solid #222; pt-10">
+                        AUTENTICADO VIA NEXUS SECURITY
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
 
-        setTimeout(() => {
-            completeAuth(user);
-        }, 2500);
-    }
-
-    function completeAuth(user) {
-        document.getElementById('scanner-line').style.display = "none";
-        document.getElementById('scan-text').innerText = "MATCH 100%";
-        document.getElementById('scan-text').classList.remove("blink");
-        
-        document.getElementById('lock-status').innerHTML = "🔓 UNLOCKED";
-        document.getElementById('lock-status').style.color = "var(--primary-green)";
-        
-        document.getElementById('user-info').innerHTML = `USUÁRIO: ${user.nome}<br>CARGO: ${user.cargo}<br>NÍVEL: ${user.nv}`;
-        
-        addLog(`ACESSO CONCEDIDO: NÍVEL ${user.nv}`);
-        addLog(`BEM-VINDO, ${user.nome.split(' ')[0]}.`);
-
-        const history = document.getElementById('access-history');
-        history.innerHTML = `[${new Date().toLocaleTimeString()}] ${user.nome} IN<br>` + history.innerHTML;
+        novaAba.document.write(htmlConteudo);
+        novaAba.document.close();
     }
 </script>
 </body>

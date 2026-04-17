@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Security OS - Fix v3</title>
+    <title>Nexus OS - Zero Trust Protocol</title>
     <style>
         :root {
             --primary-green: #00ff41;
@@ -84,7 +84,7 @@
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             z-index: 100;
             justify-content: center;
             align-items: center;
@@ -106,6 +106,8 @@
             width: 80%;
             margin-bottom: 20px;
             text-align: center;
+            font-size: 1.2rem;
+            letter-spacing: 5px;
         }
 
         .db-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
@@ -121,16 +123,19 @@
 
         #webcam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none; }
         #admin-panel { display: none; border-top: 2px solid #333; padding-top: 15px; margin-top: auto; }
+        
+        .security-alert { color: var(--error-red); font-size: 0.6rem; margin-bottom: 10px; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
 
 <div id="modal-overlay">
     <div id="m-db-auth" class="modal-content" style="display:none">
-        <h2>ACESSO DATABASE</h2>
-        <input type="password" id="db-pass" placeholder="SENHA">
-        <button onclick="verifyDB()">ENTRAR</button>
-        <button onclick="closeModal()">SAIR</button>
+        <h2>DATABASE ENCRYPTION</h2>
+        <input type="password" id="db-pass" placeholder="KEY">
+        <button onclick="verifyDB()">DECRYPT</button>
+        <button onclick="closeModal()">EXIT</button>
     </div>
 
     <div id="m-db-view" class="modal-content" style="display:none">
@@ -143,61 +148,57 @@
         <button onclick="closeModal()">FECHAR</button>
     </div>
 
-    <div id="m-card" class="modal-content" style="display:none">
-        <h2>LEITOR DE CARTÃO</h2>
-        <button onclick="loginCard('ID-HT-1020')">ACESSO NÍVEL 1</button>
-        <button onclick="loginCard('ID-BS-2030')">ACESSO NÍVEL 2</button>
-        <button onclick="loginCard('ID-RR-3040')">ACESSO NÍVEL 3</button>
-        <button onclick="closeModal()">VOLTAR</button>
+    <div id="m-selection" class="modal-content" style="display:none">
+        <h2>IDENTIFICAÇÃO REQUERIDA</h2>
+        <div class="security-alert">AVISO: REDE HOSTIL DETECTADA - MFA OBRIGATÓRIO</div>
+        <button onclick="stepToken('CARD')">USAR CARTÃO FÍSICO</button>
+        <button onclick="stepManualID()">DIGITAR ID MANUAL</button>
+        <button class="btn-danger" onclick="closeModal()">ABORTAR</button>
     </div>
 
-    <div id="m-id" class="modal-content" style="display:none">
-        <h2>ID MANUAL (RECOVERY)</h2>
-        <input type="text" id="id-input" placeholder="ID DO FUNCIONÁRIO">
-        <button onclick="loginID()">AUTENTICAR</button>
-        <button onclick="closeModal()">VOLTAR</button>
+    <div id="m-card-list" class="modal-content" style="display:none">
+        <h2>SELECIONE O NÍVEL</h2>
+        <button onclick="setLoginType('ID-HT-1020')">ACESSO NV 1</button>
+        <button onclick="setLoginType('ID-BS-2030')">ACESSO NV 2</button>
+        <button onclick="setLoginType('ID-RR-3040')">ACESSO NV 3</button>
+        <button onclick="openModal('CARD')">VOLTAR</button>
     </div>
 
-    <div id="m-face" class="modal-content" style="display:none">
-        <h2>FACE CHECK OBRIGATÓRIO</h2>
-        <div id="u-display" style="font-size:0.7rem; margin-bottom:15px; border:1px dashed var(--primary-green); padding:10px"></div>
-        <p style="font-size:0.5rem">Atenção: Acesso via ID manual exige confirmação óptica.</p>
-        <button onclick="startScan()">INICIAR CÂMERA</button>
-        <button onclick="closeModal()">CANCELAR</button>
+    <div id="m-token" class="modal-content" style="display:none">
+        <h2>TOKEN DE SEGURANÇA (MFA)</h2>
+        <p id="token-status" style="font-size:0.6rem">AGUARDANDO CÓDIGO DO DISPOSITIVO...</p>
+        <input type="text" id="token-input" maxlength="6" placeholder="000000">
+        <button onclick="validateToken()">AUTENTICAR TOKEN</button>
+        <button class="btn-danger" onclick="closeModal()">CANCELAR</button>
     </div>
 </div>
 
 <div class="main-container">
     <div class="panel">
-        <h2>LOGS DE ACESSO</h2>
+        <h2>LOGS DO SISTEMA</h2>
         <div id="logs" style="font-size: 0.6rem; overflow-y: auto; flex-grow: 1;"></div>
         <div id="admin-panel">
-            <h2 style="color:gold">SISTEMA DE OVERRIDE</h2>
+            <h2 style="color:gold">OVERRIDE</h2>
             <div id="admin-btns"></div>
         </div>
     </div>
 
     <div class="terminal-container">
-        <div id="terminal-log">> AGUARDANDO CREDENCIAIS...</div>
+        <div id="terminal-log">> AGUARDANDO CONEXÃO...</div>
         <div class="input-area">
-            <button onclick="openModal('CARD')">💳 USAR CARTÃO</button>
-            <button onclick="openModal('ID')">⌨️ DIGITAR ID</button>
+            <button onclick="openModal('CARD')">🔑 INICIAR LOGIN (MFA)</button>
             <button onclick="openModal('DB')">🗄️ DATABASE</button>
         </div>
     </div>
 
     <div class="panel">
-        <h2>SCANNER STATUS</h2>
+        <h2>SECURE SCANNER</h2>
         <div id="camera-box">
             <video id="webcam" autoplay playsinline></video>
-            <div id="cam-txt">[ STANDBY ]</div>
+            <div id="cam-txt">[ ENCRYPTION ACTIVE ]</div>
         </div>
-        <div id="v-ui" style="display:none; margin-top:10px;">
-            <button onclick="finishLogin()">CONFIRMAR IDENTIDADE</button>
-            <button class="btn-danger" onclick="logout()">REJEITAR</button>
-        </div>
-        <div id="lock-status" style="text-align:center; margin-top:20px; font-weight:bold; color:var(--error-red)">🔒 LOCKED</div>
-        <button id="btn-out" style="display:none; margin-top:auto" onclick="logout()">EFETUAR LOGOFF</button>
+        <div id="lock-status" style="text-align:center; margin-top:20px; font-weight:bold; color:var(--error-red)">🔒 ACCESS RESTRICTED</div>
+        <button id="btn-out" style="display:none; margin-top:auto" onclick="logout()">TERMINATE SESSION</button>
     </div>
 </div>
 
@@ -213,6 +214,8 @@
     let currentUser = null;
     let stream = null;
     let capId = null;
+    let inactivityTimer = null;
+    let currentToken = null;
 
     let cardRegistry = JSON.parse(localStorage.getItem('nexus_cards')) || {
         "ID-HT-1020": true, "ID-BS-2030": true, "ID-RR-3040": true
@@ -226,97 +229,97 @@
         l.scrollTop = l.scrollHeight;
     }
 
-    window.onload = () => { updateAdmin(); loadLogs(); };
+    // --- LÓGICA DE TOKEN (SISTEMA HOSTIL) ---
+    function generateToken() {
+        currentToken = Math.floor(100000 + Math.random() * 900000).toString();
+        writeLog("SISTEMA: NOVO TOKEN GERADO NO DISPOSITIVO MÓVEL.");
+        writeLog(`[DEBUG TOKEN]: ${currentToken}`, true); // Simula o token chegando no celular
+    }
 
+    function validateToken() {
+        const input = document.getElementById('token-input').value;
+        if (input === currentToken) {
+            writeLog("TOKEN VALIDADO. AMBIENTE SEGURO CONFIRMADO.");
+            document.getElementById('m-token').style.display = 'none';
+            finishLogin();
+        } else {
+            writeLog("ERRO: TOKEN INVÁLIDO! ACESSO BLOQUEADO POR SEGURANÇA.", true);
+            closeModal();
+        }
+    }
+
+    // --- LOGIN FLOW ---
     function openModal(m) {
         document.getElementById('modal-overlay').style.display = 'flex';
         document.getElementById('m-db-auth').style.display = (m === 'DB') ? 'block' : 'none';
-        document.getElementById('m-card').style.display = (m === 'CARD') ? 'block' : 'none';
-        document.getElementById('m-id').style.display = (m === 'ID') ? 'block' : 'none';
+        document.getElementById('m-selection').style.display = (m === 'CARD') ? 'block' : 'none';
+        document.getElementById('m-card-list').style.display = 'none';
+        document.getElementById('m-token').style.display = 'none';
         document.getElementById('m-db-view').style.display = 'none';
-        document.getElementById('m-face').style.display = 'none';
     }
 
-    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; stopCam(); }
+    function stepToken(type) {
+        document.getElementById('m-selection').style.display = 'none';
+        document.getElementById('m-card-list').style.display = 'block';
+    }
 
-    // --- LOGIN POR CARTÃO (CORRIGIDO) ---
-    async function loginCard(id) {
-        if (!cardRegistry[id]) { 
-            writeLog(`ERRO: CARTÃO ${id} DESATIVADO NO SISTEMA!`, true); 
-            closeModal(); 
-            return; 
-        }
+    function setLoginType(id) {
+        if (!cardRegistry[id]) { writeLog("CARTÃO DESATIVADO!", true); closeModal(); return; }
         currentUser = { ...USERS[id], id: id };
-        closeModal();
-        
-        // Ativa a câmera apenas para efeito visual
-        const v = document.getElementById('webcam');
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            v.srcObject = stream; v.style.display = 'block';
-            document.getElementById('cam-txt').style.display = 'none';
-        } catch(e) { console.log("Câmera indisponível"); }
-
-        writeLog(`CARTÃO ${id} RECONHECIDO. IGNORANDO FACE CHECK...`);
-        
-        // Vai direto para o desbloqueio sem precisar clicar em nada
-        setTimeout(finishLogin, 800); 
+        document.getElementById('m-card-list').style.display = 'none';
+        document.getElementById('m-token').style.display = 'block';
+        document.getElementById('token-input').value = "";
+        generateToken();
     }
 
-    // --- LOGIN POR ID (CORRIGIDO PARA RECOVERY) ---
-    function loginID() {
-        const val = document.getElementById('id-input').value.toUpperCase().trim();
-        if (USERS[val]) {
-            // No ID manual, permitimos o acesso mesmo se o cartão estiver OFF 
-            // (Para o gerente poder logar e religar o cartão)
-            currentUser = { ...USERS[val], id: val };
-            document.getElementById('m-id').style.display = 'none';
-            document.getElementById('m-face').style.display = 'block';
-            document.getElementById('u-display').innerHTML = `RECOVERY LOGIN: ${currentUser.nome}<br>NÍVEL: ${currentUser.nv}`;
-            
-            if (!cardRegistry[val]) {
-                writeLog("AVISO: CARTÃO DESTE USUÁRIO ESTÁ DESATIVADO. LOGIN VIA ID NECESSÁRIO.", true);
-            }
-        } else { 
-            writeLog("ID NÃO ENCONTRADO.", true); 
+    function stepManualID() {
+        const id = prompt("DIGITE SEU ID:");
+        if (USERS[id]) {
+            currentUser = { ...USERS[id], id: id };
+            document.getElementById('m-selection').style.display = 'none';
+            document.getElementById('m-token').style.display = 'block';
+            generateToken();
+        } else {
+            writeLog("ID NÃO RECONHECIDO.", true);
+            closeModal();
         }
-    }
-
-    async function startScan() {
-        if (!localStorage.getItem('photo-' + currentUser.key)) { writeLog("ERRO: BIOMETRIA AUSENTE!", true); return; }
-        closeModal();
-        const v = document.getElementById('webcam');
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        v.srcObject = stream; v.style.display = 'block';
-        document.getElementById('cam-txt').style.display = 'none';
-        document.getElementById('v-ui').style.display = 'block';
-        writeLog("SISTEMA ÓPTICO ATIVO. AGUARDANDO VALIDAÇÃO...");
     }
 
     function finishLogin() {
-        document.getElementById('lock-status').innerHTML = "🔓 UNLOCKED";
+        document.getElementById('modal-overlay').style.display = 'none';
+        document.getElementById('lock-status').innerHTML = "🔓 SECURE CONNECTION ESTABLISHED";
         document.getElementById('lock-status').style.color = "var(--primary-green)";
         document.getElementById('btn-out').style.display = 'block';
-        document.getElementById('v-ui').style.display = 'none';
         
-        // Ativa painel de controle para Nível 2 e 3
         if (currentUser.nv >= 2) { 
             document.getElementById('admin-panel').style.display = 'block'; 
             updateAdmin(); 
         }
         
-        writeLog(`ACESSO CONCEDIDO: ${currentUser.nome}`);
-        addLog(`${currentUser.nome} (NV ${currentUser.nv}) logou.`);
+        writeLog(`BEM-VINDO, ${currentUser.nome}. SESSÃO MONITORADA.`);
+        addLog(`${currentUser.nome} autenticou via MFA.`);
+        resetInactivityTimer();
     }
 
-    // --- DATABASE ---
+    // --- RESTANTE DAS FUNÇÕES (TIMEOUT/ADMIN/DB) ---
+    function resetInactivityTimer() {
+        if (!currentUser) return;
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => {
+            writeLog("LOGOFF: SESSÃO EXPIRADA POR INATIVIDADE.", true);
+            setTimeout(logout, 1500);
+        }, 120000); 
+    }
+
+    window.addEventListener('mousemove', resetInactivityTimer);
+    window.addEventListener('keypress', resetInactivityTimer);
+
     function verifyDB() {
         if (document.getElementById('db-pass').value === "senha1234") {
             document.getElementById('m-db-auth').style.display = 'none';
             document.getElementById('m-db-view').style.display = 'block';
             renderDB();
-        } else { writeLog("ACESSO DB NEGADO!", true); closeModal(); }
-        document.getElementById('db-pass').value = "";
+        } else { writeLog("ACESSO NEGADO!", true); closeModal(); }
     }
 
     function renderDB() {
@@ -325,7 +328,7 @@
             const img = localStorage.getItem('photo-' + USERS[id].key);
             d.innerHTML += `<div class="db-item">
                 ${img ? `<img src="${img}" class="captured-photo">` : '<div style="height:70px; background:#222"></div>'}
-                ${USERS[id].nome}<br><button onclick="openCap('${id}')" style="font-size:0.4rem; padding:5px">CAPTURAR</button>
+                ${USERS[id].nome}<br><button onclick="openCap('${id}')" style="font-size:0.4rem">UPDATE</button>
             </div>`;
         });
     }
@@ -344,16 +347,14 @@
         ctx.translate(400, 0); ctx.scale(-1, 1);
         ctx.drawImage(v, 0, 0, 400, 300);
         localStorage.setItem('photo-' + USERS[capId].key, c.toDataURL('image/png'));
-        writeLog(`BIOMETRIA ATUALIZADA: ${USERS[capId].nome}`);
         renderDB(); stopCam();
     }
 
-    // --- OVERRIDE ---
     function updateAdmin() {
         const c = document.getElementById('admin-btns'); c.innerHTML = '';
         Object.keys(cardRegistry).forEach(id => {
             const active = cardRegistry[id];
-            c.innerHTML += `<div style="margin-bottom:8px; border-bottom: 1px solid #222; padding-bottom: 5px;">
+            c.innerHTML += `<div style="margin-bottom:8px">
                 <span style="font-size:0.5rem">${USERS[id].nome}</span>
                 <button onclick="toggleStatus('${id}')" style="width:auto; padding:2px 8px; float:right; ${active ? '' : 'color:red; border-color:red'}">
                     ${active ? 'ON' : 'OFF'}
@@ -363,12 +364,8 @@
 
     function toggleStatus(id) {
         cardRegistry[id] = !cardRegistry[id];
-        save(); 
-        updateAdmin();
-        writeLog(`ADMIN: CARTÃO ${id} ALTERADO PARA ${cardRegistry[id] ? 'ATIVO' : 'DESATIVADO'}.`);
-        if (currentUser && currentUser.id === id && !cardRegistry[id]) {
-            writeLog("ALERTA: VOCÊ DESATIVOU SUA PRÓPRIA CREDENCIAL ÓPTICA!", true);
-        }
+        save(); updateAdmin();
+        writeLog(`SISTEMA: CREDENCIAL ${id} ALTERADA.`);
     }
 
     function stopCam() { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; } }
@@ -380,11 +377,10 @@
         loadLogs();
     }
 
-    function loadLogs() { 
-        document.getElementById('logs').innerHTML = (JSON.parse(localStorage.getItem('nexus_h')) || []).join('<br>'); 
-    }
+    function loadLogs() { document.getElementById('logs').innerHTML = (JSON.parse(localStorage.getItem('nexus_h')) || []).join('<br>'); }
     
-    function logout() { stopCam(); location.reload(); }
+    function logout() { location.reload(); }
+    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; stopCam(); }
 </script>
 </body>
 </html>

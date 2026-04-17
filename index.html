@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Security OS - Master Access Fixed</title>
+    <title>Nexus Security OS - Fresh Session Mode</title>
     <style>
         :root {
             --primary-green: #00ff41;
@@ -79,7 +79,6 @@
 
         button:hover:not(:disabled) { background: var(--primary-green); color: black; }
         button:disabled { border-color: #444; color: #444; cursor: not-allowed; }
-        .btn-danger { border-color: var(--error-red); color: var(--error-red); }
 
         #modal-overlay {
             display: none;
@@ -125,6 +124,7 @@
         
         #face-choice-ui { display: none; margin-top: 10px; }
         .panic-btn { margin-top: 20px; border-color: #ff9900; color: #ff9900; }
+        .hint { font-size: 0.6rem; color: #666; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -132,7 +132,8 @@
 <div id="modal-overlay">
     <div id="m-db-auth" class="modal-content" style="display:none">
         <h2>DATABASE ACCESS</h2>
-        <input type="password" id="db-pass" placeholder="SENHA">
+        <p class="hint">SENHA DE ACESSO: <span style="color:var(--primary-green)">senha1234</span></p>
+        <input type="password" id="db-pass" placeholder="DIGITE A SENHA" autocomplete="off">
         <button onclick="verifyDB()">ENTRAR</button>
         <button onclick="closeModal()">SAIR</button>
     </div>
@@ -149,16 +150,16 @@
 
     <div id="m-card" class="modal-content" style="display:none">
         <h2>LEITOR DE CARTÃO</h2>
-        <button onclick="loginProcess('ID-HT-1020', 'CARD')">NÍVEL 1</button>
-        <button onclick="loginProcess('ID-BS-2030', 'CARD')">NÍVEL 2</button>
-        <button onclick="loginProcess('ID-RR-3040', 'CARD')">NÍVEL 3</button>
+        <button onclick="loginProcess('ID-HT-1020', 'CARD')">NÍVEL 1 (HEITOR)</button>
+        <button onclick="loginProcess('ID-BS-2030', 'CARD')">NÍVEL 2 (BEATRIZ)</button>
+        <button onclick="loginProcess('ID-RR-3040', 'CARD')">NÍVEL 3 (RICARDO)</button>
         <button onclick="closeModal()">VOLTAR</button>
     </div>
 
     <div id="m-id" class="modal-content" style="display:none">
-        <h2>ID MANUAL (RECOVERY MODE)</h2>
-        <p style="font-size: 0.5rem; color: #888;">USE O CÓDIGO DO FUNCIONÁRIO (EX: ID-RR-3040)</p>
-        <input type="text" id="id-input" placeholder="ID-XX-0000">
+        <h2>ID MANUAL (RECOVERY)</h2>
+        <p class="hint">EX: ID-RR-3040</p>
+        <input type="text" id="id-input" placeholder="ID-XX-0000" autocomplete="off">
         <button onclick="loginID()">VERIFICAR</button>
         <button onclick="closeModal()">VOLTAR</button>
     </div>
@@ -169,13 +170,12 @@
         <div style="width: 100%; border: 1px solid #333; height: 10px; margin: 15px 0;">
             <div id="p-bar" style="width: 0%; height: 100%; background: var(--primary-green); transition: width 0.1s;"></div>
         </div>
-        <p style="font-size: 0.7rem;">VALIDANDO PERÍMETRO...</p>
     </div>
 </div>
 
 <div class="main-container">
     <div class="panel">
-        <h2>HISTÓRICO LOGS</h2>
+        <h2>SESSION LOGS</h2>
         <div id="logs" style="font-size: 0.6rem; overflow-y: auto; flex-grow: 1;"></div>
         <div id="admin-panel">
             <h2 style="color:gold">SISTEMA OVERRIDE</h2>
@@ -184,7 +184,7 @@
     </div>
 
     <div class="terminal-container">
-        <div id="terminal-log">> PROTOCOLO NEXUS ONLINE...</div>
+        <div id="terminal-log">> AGUARDANDO COMANDO...</div>
         <div class="input-area">
             <button onclick="openModal('CARD')">💳 LOGIN CARTÃO</button>
             <button onclick="openModal('ID')">⌨️ LOGIN MANUAL</button>
@@ -196,7 +196,7 @@
         <h2>MONITOR ÓPTICO</h2>
         <div id="camera-box">
             <video id="webcam" autoplay playsinline></video>
-            <div id="cam-txt">[ OFF ]</div>
+            <div id="cam-txt">[ STANDBY ]</div>
         </div>
         
         <div id="face-choice-ui">
@@ -207,8 +207,8 @@
 
         <div id="lock-status" style="text-align:center; margin-top:20px; font-weight:bold; color:var(--error-red)">🔒 LOCKED</div>
         
-        <button id="btn-panic" class="panic-btn" style="display:none" onclick="panicLogout()">🕶️ REMOVER ÓCULOS (PANIC)</button>
-        <button id="btn-out" style="display:none; margin-top:auto" onclick="logout()">LOGOFF</button>
+        <button id="btn-panic" class="panic-btn" style="display:none" onclick="panicLogout()">🕶️ REMOVER ÓCULOS</button>
+        <button id="btn-out" style="display:none; margin-top:auto" onclick="logout()">LOGOUT & WIPE</button>
     </div>
 </div>
 
@@ -223,11 +223,13 @@
 
     let currentUser = null;
     let stream = null;
+    // O Override continua salvo para permitir o teste da função, mas o Log limpa.
     let cardRegistry = JSON.parse(localStorage.getItem('nexus_cards')) || {
         "ID-HT-1020": true, "ID-BS-2030": true, "ID-RR-3040": true
     };
 
-    function save() { localStorage.setItem('nexus_cards', JSON.stringify(cardRegistry)); }
+    function saveCards() { localStorage.setItem('nexus_cards', JSON.stringify(cardRegistry)); }
+    
     function writeLog(t, err = false) {
         const l = document.getElementById('terminal-log');
         l.innerHTML += `<br><span style="color:${err ? 'var(--error-red)' : 'var(--primary-green)'}">> ${t}</span>`;
@@ -247,18 +249,14 @@
 
     function loginID() {
         const val = document.getElementById('id-input').value.toUpperCase().trim();
-        if (USERS[val]) { 
-            // LOGIN MANUAL É RECOVERY: Ignora o status do cartão no Override
-            writeLog(`MODO RECOVERY ATIVADO PARA ${USERS[val].nome}`);
-            loginProcess(val, 'RECOVERY'); 
-        } 
-        else { writeLog("ID INVÁLIDO OU INEXISTENTE.", true); }
+        if (USERS[val]) { loginProcess(val, 'RECOVERY'); } 
+        else { writeLog("ID INVÁLIDO.", true); }
+        document.getElementById('id-input').value = ""; // Limpa campo
     }
 
     async function loginProcess(id, mode) {
-        // Se for login por CARTÃO, checa o Override. Se for RECOVERY, passa direto.
         if (mode === 'CARD' && !cardRegistry[id]) {
-            writeLog(`ACESSO NEGADO: CARTÃO ${id} DESATIVADO!`, true);
+            writeLog(`CARTÃO ${id} BLOQUEADO!`, true);
             closeModal(); return;
         }
 
@@ -267,14 +265,13 @@
         document.getElementById('m-id').style.display = 'none';
         document.getElementById('m-geo').style.display = 'block';
 
-        const tasks = ["BYPASSING FIREWALL...", "GEO-TRIANGULATION...", "SAT-LINK SYNC..."];
+        const tasks = ["BYPASSING...", "TRIANGULATION...", "SAT-LINK OK"];
         document.getElementById('geo-steps').innerHTML = "";
         for (let i = 0; i < tasks.length; i++) {
             document.getElementById('geo-steps').innerHTML += `+ ${tasks[i]}<br>`;
             document.getElementById('p-bar').style.width = ((i + 1) * 33) + "%";
             await new Promise(r => setTimeout(r, 600));
         }
-
         closeModal();
         startFaceID();
     }
@@ -286,18 +283,18 @@
             v.srcObject = stream; v.style.display = 'block';
             document.getElementById('cam-txt').style.display = 'none';
             document.getElementById('face-choice-ui').style.display = 'block';
-            writeLog("AGUARDANDO VALIDAÇÃO BIOMÉTRICA...");
-        } catch(e) { writeLog("ERRO ÓPTICO: CÂMERA NÃO DETECTADA.", true); }
+            writeLog("VALIDAÇÃO BIOMÉTRICA REQUERIDA.");
+        } catch(e) { writeLog("ERRO: CÂMERA NÃO ENCONTRADA.", true); }
     }
 
     function failFaceID() {
-        writeLog("VIOLAÇÃO BIOMÉTRICA: FACE REJEITADA!", true);
+        writeLog("FACE REJEITADA!", true);
         setTimeout(logout, 1000);
     }
 
     function finishLogin() {
         document.getElementById('face-choice-ui').style.display = 'none';
-        document.getElementById('lock-status').innerHTML = "🔓 SYSTEM UNLOCKED";
+        document.getElementById('lock-status').innerHTML = "🔓 UNLOCKED";
         document.getElementById('lock-status').style.color = "var(--primary-green)";
         document.getElementById('btn-out').style.display = 'block';
         document.getElementById('btn-panic').style.display = 'block';
@@ -306,20 +303,17 @@
             document.getElementById('admin-panel').style.display = 'block'; 
             updateAdmin(); 
         }
-        
-        writeLog(`SESSÃO INICIADA: ${currentUser.nome}`);
-        addLog(`${currentUser.nome} logou.`);
+        writeLog(`USUÁRIO: ${currentUser.nome} AUTORIZADO.`);
+        addLog(`${currentUser.nome} entrou.`);
     }
 
     function updateAdmin() {
         const c = document.getElementById('admin-btns'); c.innerHTML = '';
         Object.keys(cardRegistry).forEach(id => {
             const active = cardRegistry[id];
-            // REGRA: Beatriz (NV2) NÃO PODE desativar Ricardo (NV3)
             const canEdit = currentUser.nv >= USERS[id].nv;
-            
             c.innerHTML += `<div style="margin-bottom:8px">
-                <span style="font-size:0.5rem">${USERS[id].nome} (NV${USERS[id].nv})</span>
+                <span style="font-size:0.5rem">${USERS[id].nome}</span>
                 <button onclick="toggleStatus('${id}')" 
                     ${!canEdit ? 'disabled' : ''}
                     style="width:auto; padding:2px 8px; float:right; ${active ? '' : 'color:red; border-color:red'}">
@@ -330,22 +324,20 @@
 
     function toggleStatus(id) {
         cardRegistry[id] = !cardRegistry[id];
-        save(); updateAdmin();
-        writeLog(`OVERRIDE: ${id} DEFINIDO COMO ${cardRegistry[id] ? 'ATIVO' : 'INATIVO'}`);
+        saveCards(); updateAdmin();
     }
 
     function panicLogout() {
-        writeLog("PANIC BUTTON: ÓCULOS REMOVIDOS. LOGOFF IMEDIATO.", true);
+        writeLog("PANIC: BIOMETRIA PERDIDA.", true);
         setTimeout(logout, 800);
     }
 
-    // --- DB & MISC ---
     function verifyDB() {
         if (document.getElementById('db-pass').value === "senha1234") {
             document.getElementById('m-db-auth').style.display = 'none';
             document.getElementById('m-db-view').style.display = 'block';
             renderDB();
-        } else { writeLog("SENHA INCORRETA!", true); closeModal(); }
+        } else { writeLog("ACESSO NEGADO!", true); closeModal(); }
         document.getElementById('db-pass').value = "";
     }
 
@@ -384,8 +376,15 @@
         localStorage.setItem('nexus_h', JSON.stringify(h.slice(0,20)));
         loadLogs();
     }
+    
     function loadLogs() { document.getElementById('logs').innerHTML = (JSON.parse(localStorage.getItem('nexus_h')) || []).join('<br>'); }
-    function logout() { if(stream) stream.getTracks().forEach(t => t.stop()); location.reload(); }
+
+    // --- LOGOUT & WIPE TOTAL DO HISTÓRICO ---
+    function logout() {
+        if(stream) stream.getTracks().forEach(t => t.stop());
+        localStorage.removeItem('nexus_h'); // APAGA O LOG DO HISTÓRICO
+        location.reload();
+    }
 </script>
 </body>
 </html>

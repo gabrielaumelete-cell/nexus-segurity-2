@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Security - Geo-Verification Mode</title>
+    <title>Nexus Security OS - COMPLETE EDITION</title>
     <style>
         :root {
             --primary-green: #00ff41;
@@ -78,6 +78,7 @@
         }
 
         button:hover { background: var(--primary-green); color: black; }
+        .btn-danger { border-color: var(--error-red); color: var(--error-red); }
 
         #modal-overlay {
             display: none;
@@ -97,130 +98,275 @@
             text-align: center;
         }
 
-        .progress-container {
-            width: 100%;
-            border: 1px solid #333;
-            height: 12px;
-            margin: 20px 0;
-            background: #050505;
-        }
-        .progress-bar {
-            width: 0%;
-            height: 100%;
-            background: var(--primary-green);
-            box-shadow: 0 0 10px var(--primary-green);
-            transition: width 0.1s;
+        input {
+            background: #0a0a0a;
+            border: 1px solid var(--primary-green);
+            color: var(--primary-green);
+            padding: 12px;
+            width: 80%;
+            margin-bottom: 20px;
+            text-align: center;
         }
 
-        .geo-data {
-            font-size: 0.7rem;
-            color: #888;
-            text-align: left;
-            margin-bottom: 15px;
-            height: 100px;
+        .db-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+        .db-item { border: 1px solid #333; padding: 10px; background: #080808; font-size: 0.6rem; }
+        .captured-photo { width: 100%; height: 70px; object-fit: cover; border: 1px solid var(--primary-green); }
+
+        #camera-box {
+            width: 100%; height: 200px;
+            background: #000; border: 1px solid #222;
+            display: flex; align-items: center; justify-content: center;
             overflow: hidden;
         }
+
+        #webcam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none; }
+        #admin-panel { display: none; border-top: 2px solid #333; padding-top: 15px; margin-top: auto; }
+        
+        .progress-container { width: 100%; border: 1px solid #333; height: 10px; margin: 15px 0; display: none; }
+        .progress-bar { width: 0%; height: 100%; background: var(--primary-green); transition: width 0.1s; }
     </style>
 </head>
 <body>
 
 <div id="modal-overlay">
-    <div id="m-select" class="modal-content" style="display:none">
-        <h2>IDENTIFICAÇÃO REQUERIDA</h2>
-        <button onclick="startGeoAuth('RICARDO ROCHA (NV 3)')">ENTRAR COMO RICARDO</button>
-        <button onclick="startGeoAuth('BEATRIZ SOARES (NV 2)')">ENTRAR COMO BEATRIZ</button>
-        <button onclick="closeModal()" style="border-color: #555; color: #555;">CANCELAR</button>
+    <div id="m-db-auth" class="modal-content" style="display:none">
+        <h2>DATABASE ACCESS</h2>
+        <input type="password" id="db-pass" placeholder="SENHA">
+        <button onclick="verifyDB()">ENTRAR</button>
+        <button onclick="closeModal()">SAIR</button>
+    </div>
+
+    <div id="m-db-view" class="modal-content" style="display:none">
+        <h2>REGISTROS BIOMÉTRICOS</h2>
+        <div class="db-grid" id="db-list"></div>
+        <div id="cap-ui" style="display:none">
+            <video id="v-db" autoplay playsinline style="width:200px; height:150px; border:1px solid gold;"></video><br>
+            <button onclick="savePhoto()" style="color:gold; border-color:gold">CAPTURAR</button>
+        </div>
+        <button onclick="closeModal()">FECHAR</button>
+    </div>
+
+    <div id="m-card" class="modal-content" style="display:none">
+        <h2>LEITOR DE CARTÃO</h2>
+        <button onclick="loginProcess('ID-HT-1020', 'CARD')">NÍVEL 1</button>
+        <button onclick="loginProcess('ID-BS-2030', 'CARD')">NÍVEL 2</button>
+        <button onclick="loginProcess('ID-RR-3040', 'CARD')">NÍVEL 3</button>
+        <button onclick="closeModal()">VOLTAR</button>
+    </div>
+
+    <div id="m-id" class="modal-content" style="display:none">
+        <h2>ID MANUAL</h2>
+        <input type="text" id="id-input" placeholder="ID DO FUNCIONÁRIO">
+        <button onclick="loginID()">VERIFICAR</button>
+        <button onclick="closeModal()">VOLTAR</button>
     </div>
 
     <div id="m-geo" class="modal-content" style="display:none">
-        <h2>VERIFICANDO PERÍMETRO</h2>
-        <div id="geo-list" class="geo-data"></div>
-        <div class="progress-container">
+        <h2>TRIANGULANDO POSIÇÃO...</h2>
+        <div id="geo-steps" style="font-size: 0.6rem; color: gold; text-align: left; margin-bottom: 10px;"></div>
+        <div class="progress-container" id="p-container">
             <div class="progress-bar" id="p-bar"></div>
         </div>
-        <div id="geo-status" style="font-size: 0.6rem; letter-spacing: 2px;">SINCRONIZANDO...</div>
+        <p id="geo-status" style="font-size: 0.7rem;">VALIDANDO PERÍMETRO DE REDE...</p>
     </div>
 </div>
 
 <div class="main-container">
     <div class="panel">
-        <h2>SISTEMA LOGS</h2>
+        <h2>HISTÓRICO</h2>
         <div id="logs" style="font-size: 0.6rem; overflow-y: auto; flex-grow: 1;"></div>
+        <div id="admin-panel">
+            <h2 style="color:gold">OVERRIDE</h2>
+            <div id="admin-btns"></div>
+        </div>
     </div>
 
     <div class="terminal-container">
-        <div id="terminal-log">> CONEXÃO ENCRIPTADA ESTABELECIDA...</div>
+        <div id="terminal-log">> AGUARDANDO CREDENCIAIS...</div>
         <div class="input-area">
-            <button onclick="openModal()">🔓 INICIAR PROTOCOLO DE ACESSO</button>
+            <button onclick="openModal('CARD')">💳 CARTÃO</button>
+            <button onclick="openModal('ID')">⌨️ ID MANUAL</button>
+            <button onclick="openModal('DB')">🗄️ DATABASE</button>
         </div>
     </div>
 
     <div class="panel">
-        <h2>LOCK-STATUS</h2>
-        <div id="lock-status" style="text-align:center; margin-top:20px; font-weight:bold; color:var(--error-red)">🔒 SECURE ACCESS ONLY</div>
-        <button id="btn-out" style="display:none; margin-top:auto" onclick="location.reload()">TERMINAR SESSÃO</button>
+        <h2>SCANNER</h2>
+        <div id="camera-box">
+            <video id="webcam" autoplay playsinline></video>
+            <div id="cam-txt">[ OFF ]</div>
+        </div>
+        <div id="lock-status" style="text-align:center; margin-top:20px; font-weight:bold; color:var(--error-red)">🔒 LOCKED</div>
+        <button id="btn-out" style="display:none; margin-top:auto" onclick="logout()">LOGOFF</button>
     </div>
 </div>
 
-<script>
-    let activeUser = "";
+<canvas id="canvas" width="400" height="300" style="display:none"></canvas>
 
+<script>
+    const USERS = {
+        "ID-HT-1020": { nome: "HEITOR TORRES", key: "ht", nv: 1 },
+        "ID-BS-2030": { nome: "BEATRIZ SOARES", key: "bs", nv: 2 },
+        "ID-RR-3040": { nome: "RICARDO ROCHA", key: "rr", nv: 3 }
+    };
+
+    let currentUser = null;
+    let stream = null;
+    let inactivityTimer = null;
+    let cardRegistry = JSON.parse(localStorage.getItem('nexus_cards')) || {
+        "ID-HT-1020": true, "ID-BS-2030": true, "ID-RR-3040": true
+    };
+
+    function save() { localStorage.setItem('nexus_cards', JSON.stringify(cardRegistry)); }
     function writeLog(t, err = false) {
         const l = document.getElementById('terminal-log');
         l.innerHTML += `<br><span style="color:${err ? 'var(--error-red)' : 'var(--primary-green)'}">> ${t}</span>`;
         l.scrollTop = l.scrollHeight;
     }
 
-    function openModal() {
+    // --- TIMEOUT 2 MINUTOS ---
+    function resetTimer() {
+        if (!currentUser) return;
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => {
+            writeLog("LOGOFF POR INATIVIDADE.", true);
+            logout();
+        }, 120000); 
+    }
+    window.onmousemove = resetTimer;
+    window.onkeypress = resetTimer;
+
+    function openModal(m) {
         document.getElementById('modal-overlay').style.display = 'flex';
-        document.getElementById('m-select').style.display = 'block';
+        document.getElementById('m-db-auth').style.display = (m === 'DB') ? 'block' : 'none';
+        document.getElementById('m-card').style.display = (m === 'CARD') ? 'block' : 'none';
+        document.getElementById('m-id').style.display = (m === 'ID') ? 'block' : 'none';
+        document.getElementById('m-db-view').style.display = 'none';
         document.getElementById('m-geo').style.display = 'none';
     }
 
-    function closeModal() {
-        document.getElementById('modal-overlay').style.display = 'none';
+    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; stopCam(); }
+
+    function loginID() {
+        const val = document.getElementById('id-input').value.toUpperCase().trim();
+        if (USERS[val]) {
+            loginProcess(val, 'ID');
+        } else { writeLog("ID INVÁLIDO.", true); }
     }
 
-    async function startGeoAuth(user) {
-        activeUser = user;
-        document.getElementById('m-select').style.display = 'none';
-        document.getElementById('m-geo').style.display = 'block';
-
-        const bar = document.getElementById('p-bar');
-        const list = document.getElementById('geo-list');
-        const status = document.getElementById('geo-status');
-
-        const tasks = [
-            "SOLICITANDO IP PÚBLICO...",
-            "TRIANGULANDO TORRES DE CELULAR...",
-            "VALIDANDO ENDEREÇO MAC...",
-            "REQUISITANDO COORDENADAS SATELITAIS...",
-            "VERIFICANDO CERCA GEOGRÁFICA (GEOFENCE)...",
-            "ANALISANDO INTEGRIDADE DO TERMINAL..."
-        ];
-
-        for (let i = 0; i < tasks.length; i++) {
-            list.innerHTML += `> ${tasks[i]} <br>`;
-            bar.style.width = ((i + 1) * 16.6) + "%";
-            await new Promise(r => setTimeout(r, 700));
+    async function loginProcess(id, type) {
+        // Se for cartão e estiver em OFF, barra. Se for ID, permite entrar (recovery).
+        if (type === 'CARD' && !cardRegistry[id]) {
+            writeLog(`CARTÃO ${id} BLOQUEADO!`, true);
+            closeModal();
+            return;
         }
 
-        status.innerHTML = "LOCALIZAÇÃO CONFIRMADA!";
-        status.style.color = "var(--primary-green)";
+        currentUser = { ...USERS[id], id: id };
+        document.getElementById('m-card').style.display = 'none';
+        document.getElementById('m-id').style.display = 'none';
+        document.getElementById('m-geo').style.display = 'block';
+        document.getElementById('p-container').style.display = 'block';
+
+        // Simulação de Triangulação
+        const tasks = ["BUSCANDO IP...", "WI-FI TRIANGULATION...", "SATELLITE SYNC...", "PERÍMETRO OK!"];
+        const geoList = document.getElementById('geo-steps');
+        const bar = document.getElementById('p-bar');
+        geoList.innerHTML = "";
         
-        await new Promise(r => setTimeout(r, 1000));
-        finishAccess();
+        for (let i = 0; i < tasks.length; i++) {
+            geoList.innerHTML += `+ ${tasks[i]}<br>`;
+            bar.style.width = ((i + 1) * 25) + "%";
+            await new Promise(r => setTimeout(r, 600));
+        }
+
+        writeLog("VERIFICAÇÃO GEOGRÁFICA CONCLUÍDA.");
+        finishLogin();
     }
 
-    function finishAccess() {
-        document.getElementById('modal-overlay').style.display = 'none';
-        document.getElementById('lock-status').innerHTML = "🔓 ACESSO CONCEDIDO";
+    function finishLogin() {
+        closeModal();
+        document.getElementById('lock-status').innerHTML = "🔓 UNLOCKED";
         document.getElementById('lock-status').style.color = "var(--primary-green)";
         document.getElementById('btn-out').style.display = 'block';
         
-        writeLog(`USUÁRIO AUTENTICADO: ${activeUser}`);
-        writeLog("VERIFICAÇÃO GEOGRÁFICA: DENTRO DO PERÍMETRO.");
+        if (currentUser.nv >= 2) { 
+            document.getElementById('admin-panel').style.display = 'block'; 
+            updateAdmin(); 
+        }
+        
+        writeLog(`ACESSO LIBERADO: ${currentUser.nome}`);
+        addLog(`${currentUser.nome} entrou.`);
+        resetTimer();
     }
+
+    // --- OVERRIDE (CHEFE BLOQUEIA TUDO) ---
+    function updateAdmin() {
+        const c = document.getElementById('admin-btns'); c.innerHTML = '';
+        Object.keys(cardRegistry).forEach(id => {
+            const active = cardRegistry[id];
+            c.innerHTML += `<div style="margin-bottom:8px">
+                <span style="font-size:0.5rem">${USERS[id].nome}</span>
+                <button onclick="toggleStatus('${id}')" style="width:auto; padding:2px 8px; float:right; ${active ? '' : 'color:red; border-color:red'}">
+                    ${active ? 'ON' : 'OFF'}
+                </button><div style="clear:both"></div></div>`;
+        });
+    }
+
+    function toggleStatus(id) {
+        cardRegistry[id] = !cardRegistry[id];
+        save(); updateAdmin();
+        writeLog(`STATUS ${id} ALTERADO.`);
+        if (currentUser.id === id && !cardRegistry[id]) writeLog("ALERTA: VOCÊ DESATIVOU SEU PRÓPRIO ACESSO!", true);
+    }
+
+    // --- DATABASE ---
+    function verifyDB() {
+        if (document.getElementById('db-pass').value === "senha1234") {
+            document.getElementById('m-db-auth').style.display = 'none';
+            document.getElementById('m-db-view').style.display = 'block';
+            renderDB();
+        } else { writeLog("ACESSO NEGADO!", true); closeModal(); }
+        document.getElementById('db-pass').value = "";
+    }
+
+    function renderDB() {
+        const d = document.getElementById('db-list'); d.innerHTML = '';
+        Object.keys(USERS).forEach(id => {
+            const img = localStorage.getItem('photo-' + USERS[id].key);
+            d.innerHTML += `<div class="db-item">
+                ${img ? `<img src="${img}" class="captured-photo">` : '<div style="height:70px; background:#222"></div>'}
+                ${USERS[id].nome}<br><button onclick="openCap('${id}')" style="font-size:0.4rem">FOTO</button>
+            </div>`;
+        });
+    }
+
+    async function openCap(id) {
+        capId = id; document.getElementById('cap-ui').style.display = 'block';
+        const v = document.getElementById('v-db');
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        v.srcObject = stream;
+    }
+
+    function savePhoto() {
+        const v = document.getElementById('v-db');
+        const c = document.getElementById('canvas');
+        const ctx = c.getContext('2d');
+        ctx.translate(400, 0); ctx.scale(-1, 1);
+        ctx.drawImage(v, 0, 0, 400, 300);
+        localStorage.setItem('photo-' + USERS[capId].key, c.toDataURL('image/png'));
+        renderDB(); stopCam();
+    }
+
+    function stopCam() { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; } }
+    function addLog(m) {
+        let h = JSON.parse(localStorage.getItem('nexus_h')) || [];
+        h.unshift(`[${new Date().toLocaleTimeString()}] ${m}`);
+        localStorage.setItem('nexus_h', JSON.stringify(h.slice(0,20)));
+        loadLogs();
+    }
+    function loadLogs() { document.getElementById('logs').innerHTML = (JSON.parse(localStorage.getItem('nexus_h')) || []).join('<br>'); }
+    function logout() { location.reload(); }
 </script>
 </body>
 </html>

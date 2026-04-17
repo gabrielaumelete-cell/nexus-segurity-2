@@ -2,8 +2,9 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Security OS - Fresh Session Mode</title>
+    <title>Nexus Security OS - Zero Trace Edition</title>
     <style>
         :root {
             --primary-green: #00ff41;
@@ -127,15 +128,15 @@
         .hint { font-size: 0.6rem; color: #666; margin-bottom: 10px; }
     </style>
 </head>
-<body>
-
-<div id="modal-overlay">
+<body onload="clearInputs()"> <div id="modal-overlay">
     <div id="m-db-auth" class="modal-content" style="display:none">
-        <h2>DATABASE ACCESS</h2>
-        <p class="hint">SENHA DE ACESSO: <span style="color:var(--primary-green)">senha1234</span></p>
-        <input type="password" id="db-pass" placeholder="DIGITE A SENHA" autocomplete="off">
-        <button onclick="verifyDB()">ENTRAR</button>
-        <button onclick="closeModal()">SAIR</button>
+        <form id="form-db" onsubmit="return false;">
+            <h2>DATABASE ACCESS</h2>
+            <p class="hint">SENHA: <span style="color:var(--primary-green)">senha1234</span></p>
+            <input type="password" id="db-pass" placeholder="SENHA" autocomplete="new-password">
+            <button onclick="verifyDB()">ENTRAR</button>
+            <button onclick="closeModal()">SAIR</button>
+        </form>
     </div>
 
     <div id="m-db-view" class="modal-content" style="display:none">
@@ -157,11 +158,13 @@
     </div>
 
     <div id="m-id" class="modal-content" style="display:none">
-        <h2>ID MANUAL (RECOVERY)</h2>
-        <p class="hint">EX: ID-RR-3040</p>
-        <input type="text" id="id-input" placeholder="ID-XX-0000" autocomplete="off">
-        <button onclick="loginID()">VERIFICAR</button>
-        <button onclick="closeModal()">VOLTAR</button>
+        <form id="form-id" onsubmit="return false;">
+            <h2>ID MANUAL (RECOVERY)</h2>
+            <p class="hint">EX: ID-RR-3040</p>
+            <input type="text" id="id-input" placeholder="ID-XX-0000" autocomplete="off">
+            <button onclick="loginID()">VERIFICAR</button>
+            <button onclick="closeModal()">VOLTAR</button>
+        </form>
     </div>
 
     <div id="m-geo" class="modal-content" style="display:none">
@@ -184,7 +187,7 @@
     </div>
 
     <div class="terminal-container">
-        <div id="terminal-log">> AGUARDANDO COMANDO...</div>
+        <div id="terminal-log">> SISTEMA INICIALIZADO...</div>
         <div class="input-area">
             <button onclick="openModal('CARD')">💳 LOGIN CARTÃO</button>
             <button onclick="openModal('ID')">⌨️ LOGIN MANUAL</button>
@@ -200,7 +203,6 @@
         </div>
         
         <div id="face-choice-ui">
-            <div style="font-size:0.5rem; margin-bottom:10px">RECONHECIMENTO FACIAL:</div>
             <button onclick="finishLogin()" style="color:var(--primary-green); border-color:var(--primary-green)">[ ACEITAR ]</button>
             <button onclick="failFaceID()" style="color:var(--error-red); border-color:var(--error-red)">[ REJEITAR ]</button>
         </div>
@@ -223,10 +225,16 @@
 
     let currentUser = null;
     let stream = null;
-    // O Override continua salvo para permitir o teste da função, mas o Log limpa.
     let cardRegistry = JSON.parse(localStorage.getItem('nexus_cards')) || {
         "ID-HT-1020": true, "ID-BS-2030": true, "ID-RR-3040": true
     };
+
+    function clearInputs() {
+        const inputs = document.getElementsByTagName('input');
+        for (let i = 0; i < inputs.length; i++) {
+            inputs[i].value = "";
+        }
+    }
 
     function saveCards() { localStorage.setItem('nexus_cards', JSON.stringify(cardRegistry)); }
     
@@ -245,13 +253,16 @@
         document.getElementById('m-geo').style.display = 'none';
     }
 
-    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+    function closeModal() { 
+        clearInputs();
+        document.getElementById('modal-overlay').style.display = 'none'; 
+    }
 
     function loginID() {
         const val = document.getElementById('id-input').value.toUpperCase().trim();
         if (USERS[val]) { loginProcess(val, 'RECOVERY'); } 
         else { writeLog("ID INVÁLIDO.", true); }
-        document.getElementById('id-input').value = ""; // Limpa campo
+        clearInputs();
     }
 
     async function loginProcess(id, mode) {
@@ -283,8 +294,8 @@
             v.srcObject = stream; v.style.display = 'block';
             document.getElementById('cam-txt').style.display = 'none';
             document.getElementById('face-choice-ui').style.display = 'block';
-            writeLog("VALIDAÇÃO BIOMÉTRICA REQUERIDA.");
-        } catch(e) { writeLog("ERRO: CÂMERA NÃO ENCONTRADA.", true); }
+            writeLog("BIOMETRIA REQUERIDA.");
+        } catch(e) { writeLog("ERRO: CÂMERA OFF.", true); }
     }
 
     function failFaceID() {
@@ -303,8 +314,8 @@
             document.getElementById('admin-panel').style.display = 'block'; 
             updateAdmin(); 
         }
-        writeLog(`USUÁRIO: ${currentUser.nome} AUTORIZADO.`);
-        addLog(`${currentUser.nome} entrou.`);
+        writeLog(`${currentUser.nome} LOGADO.`);
+        addLog(`${currentUser.nome} logou.`);
     }
 
     function updateAdmin() {
@@ -328,7 +339,7 @@
     }
 
     function panicLogout() {
-        writeLog("PANIC: BIOMETRIA PERDIDA.", true);
+        writeLog("PANIC: SESSÃO ENCERRADA.", true);
         setTimeout(logout, 800);
     }
 
@@ -337,8 +348,8 @@
             document.getElementById('m-db-auth').style.display = 'none';
             document.getElementById('m-db-view').style.display = 'block';
             renderDB();
-        } else { writeLog("ACESSO NEGADO!", true); closeModal(); }
-        document.getElementById('db-pass').value = "";
+        } else { writeLog("SENHA ERRADA!", true); closeModal(); }
+        clearInputs();
     }
 
     function renderDB() {
@@ -379,10 +390,16 @@
     
     function loadLogs() { document.getElementById('logs').innerHTML = (JSON.parse(localStorage.getItem('nexus_h')) || []).join('<br>'); }
 
-    // --- LOGOUT & WIPE TOTAL DO HISTÓRICO ---
     function logout() {
         if(stream) stream.getTracks().forEach(t => t.stop());
-        localStorage.removeItem('nexus_h'); // APAGA O LOG DO HISTÓRICO
+        localStorage.removeItem('nexus_h');
+        
+        // HARD WIPE DOS INPUTS ANTES DO RELOAD
+        clearInputs();
+        
+        // Reseta todos os forms
+        document.querySelectorAll('form').forEach(f => f.reset());
+        
         location.reload();
     }
 </script>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Security OS - Ultra Functional</title>
+    <title>Nexus Security OS - Final Version</title>
     <style>
         :root {
             --primary-green: #00ff41;
@@ -11,7 +11,6 @@
             --dark-bg: #0a0a0a;
             --panel-bg: #111;
             --border-style: 1px solid #222;
-            --scan-line: rgba(0, 255, 65, 0.2);
         }
 
         body {
@@ -26,7 +25,6 @@
             text-transform: uppercase;
         }
 
-        /* Estrutura Principal */
         .main-container {
             display: grid;
             grid-template-columns: 300px 1fr 300px;
@@ -43,7 +41,6 @@
             padding: 15px;
             display: flex;
             flex-direction: column;
-            box-shadow: inset 0 0 15px #000;
         }
 
         .terminal-container {
@@ -51,19 +48,6 @@
             background: black;
             display: flex;
             flex-direction: column;
-            position: relative;
-        }
-
-        /* Efeito de Scanner na tela */
-        .terminal-container::before {
-            content: " ";
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(var(--scan-line) 50%, transparent 50%);
-            background-size: 100% 4px;
-            pointer-events: none;
-            z-index: 2;
-            opacity: 0.1;
         }
 
         #terminal-log {
@@ -72,22 +56,17 @@
             font-size: 0.85rem;
             line-height: 1.4;
             overflow-y: auto;
-            color: var(--primary-green);
-            text-shadow: 0 0 5px var(--primary-green);
         }
 
-        /* Inputs e Botões */
         .input-area {
             padding: 20px;
             border-top: var(--border-style);
             background: #050505;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            text-align: center;
         }
 
         button {
-            background: rgba(0, 255, 65, 0.1);
+            background: transparent;
             color: var(--primary-green);
             border: 1px solid var(--primary-green);
             padding: 12px;
@@ -95,20 +74,12 @@
             width: 90%;
             margin-bottom: 10px;
             font-weight: bold;
-            transition: 0.3s;
             font-size: 0.75rem;
         }
 
-        button:hover {
-            background: var(--primary-green);
-            color: black;
-            box-shadow: 0 0 15px var(--primary-green);
-        }
-
+        button:hover { background: var(--primary-green); color: black; }
         .btn-danger { border-color: var(--error-red); color: var(--error-red); }
-        .btn-danger:hover { background: var(--error-red); color: white; box-shadow: 0 0 15px var(--error-red); }
 
-        /* Modais */
         #modal-overlay {
             display: none;
             position: fixed;
@@ -117,16 +88,14 @@
             z-index: 100;
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(5px);
         }
 
         .modal-content {
             background: #000;
             border: 2px solid var(--primary-green);
             padding: 30px;
-            width: 600px;
+            width: 500px;
             text-align: center;
-            position: relative;
         }
 
         input {
@@ -137,156 +106,102 @@
             width: 80%;
             margin-bottom: 20px;
             text-align: center;
-            font-family: 'Courier New', monospace;
         }
 
-        /* Grid de Fotos no DB */
-        .db-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 20px 0;
+        .db-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+        .db-item { border: 1px solid #333; padding: 10px; background: #080808; font-size: 0.6rem; }
+        .captured-photo { width: 100%; height: 70px; object-fit: cover; border: 1px solid var(--primary-green); }
+
+        #camera-box {
+            width: 100%; height: 200px;
+            background: #000; border: 1px solid #222;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        .db-item {
-            border: 1px solid #333;
-            padding: 10px;
-            background: #080808;
-        }
-
-        .captured-photo {
-            width: 100%;
-            height: 80px;
-            object-fit: cover;
-            border: 1px solid var(--primary-green);
-            margin-bottom: 10px;
-        }
-
-        /* Scanner lateral */
-        #camera-preview-box {
-            width: 100%;
-            height: 200px;
-            background: #000;
-            border: 1px solid #222;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        #main-webcam {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-            filter: sepia(100%) hue-rotate(80deg) brightness(0.8);
-            display: none;
-        }
-
-        #admin-panel {
-            display: none;
-            border-top: 2px double #333;
-            padding-top: 15px;
-            margin-top: auto;
-        }
-
-        .status-tag {
-            font-size: 0.6rem;
-            padding: 2px 5px;
-            border: 1px solid;
-            margin-left: 5px;
-        }
+        #webcam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none; }
+        #admin-panel { display: none; border-top: 2px solid #333; padding-top: 15px; margin-top: auto; }
     </style>
 </head>
 <body>
 
 <div id="modal-overlay">
-    <div id="modal-db-auth" class="modal-content" style="display:none">
-        <h2>SISTEMA DE ARQUIVOS - CRIPTOGRAFADO</h2>
-        <input type="password" id="db-pass" placeholder="CHAVE DE ACESSO">
-        <button onclick="verifyDB()">DESCRIPTOGRAFAR</button>
-        <button class="btn-danger" onclick="closeModal()">CANCELAR</button>
+    <div id="m-db-auth" class="modal-content" style="display:none">
+        <h2>ACESSO DATABASE</h2>
+        <input type="password" id="db-pass" placeholder="SENHA">
+        <button onclick="verifyDB()">ENTRAR</button>
+        <button onclick="closeModal()">SAIR</button>
     </div>
 
-    <div id="modal-db-view" class="modal-content" style="display:none">
-        <h2>REGISTROS ÓPTICOS DA NEXUS</h2>
-        <div class="db-grid" id="db-list">
-            </div>
-        <div id="capture-ui" style="display:none">
-            <div style="width:250px; height:180px; margin: 0 auto; border: 1px solid gold;">
-                <video id="db-scanner" autoplay playsinline style="width:100%; height:100%; object-fit:cover; transform: scaleX(-1);"></video>
-            </div>
-            <button onclick="savePhoto()" style="margin-top:10px; border-color:gold; color:gold">CONFIRMAR CAPTURA</button>
+    <div id="m-db-view" class="modal-content" style="display:none">
+        <h2>FOTOS REGISTRADAS</h2>
+        <div class="db-grid" id="db-list"></div>
+        <div id="cap-ui" style="display:none">
+            <video id="v-db" autoplay playsinline style="width:200px; height:150px; border:1px solid gold;"></video><br>
+            <button onclick="savePhoto()" style="color:gold; border-color:gold">CAPTURAR</button>
         </div>
-        <button onclick="closeModal()">FECHAR DATABASE</button>
+        <button onclick="closeModal()">FECHAR</button>
     </div>
 
-    <div id="modal-card" class="modal-content" style="display:none">
-        <h2>RECEPTOR DE PROXIMIDADE</h2>
-        <p style="font-size: 0.6rem;">APROXIME O CARTÃO HIERÁRQUICO</p>
-        <button onclick="loginViaCard('ID-HT-1020')">CARTÃO NÍVEL 1 (HEITOR)</button>
-        <button onclick="loginViaCard('ID-BS-2030')">CARTÃO NÍVEL 2 (BEATRIZ)</button>
-        <button onclick="loginViaCard('ID-RR-3040')">CARTÃO NÍVEL 3 (RICARDO)</button>
-        <button class="btn-danger" onclick="closeModal()">ABORTAR</button>
+    <div id="m-card" class="modal-content" style="display:none">
+        <h2>LEITOR DE CARTÃO</h2>
+        <button onclick="loginCard('ID-HT-1020')">ACESSO NÍVEL 1</button>
+        <button onclick="loginCard('ID-BS-2030')">ACESSO NÍVEL 2</button>
+        <button onclick="loginCard('ID-RR-3040')">ACESSO NÍVEL 3</button>
+        <button onclick="closeModal()">VOLTAR</button>
     </div>
 
-    <div id="modal-id" class="modal-content" style="display:none">
-        <h2>TERMINAL DE IDENTIFICAÇÃO</h2>
-        <input type="text" id="manual-input" placeholder="ID DO FUNCIONÁRIO">
-        <button onclick="loginViaID()">VERIFICAR CREDENCIAIS</button>
-        <button class="btn-danger" onclick="closeModal()">VOLTAR</button>
+    <div id="m-id" class="modal-content" style="display:none">
+        <h2>ID MANUAL</h2>
+        <input type="text" id="id-input" placeholder="ID DO FUNCIONÁRIO">
+        <button onclick="loginID()">VERIFICAR</button>
+        <button onclick="closeModal()">VOLTAR</button>
     </div>
 
-    <div id="modal-face-check" class="modal-content" style="display:none">
-        <h2>PROTOCOLOS DE SEGURANÇA EXIGIDOS</h2>
-        <div id="user-info-display" style="border: 1px solid #333; padding: 10px; margin-bottom: 10px; text-align: left;"></div>
-        <p style="color:red; font-size: 0.7rem;">! RECONHECIMENTO FACIAL NECESSÁRIO PARA LOGIN MANUAL !</p>
-        <button onclick="startFaceScan()">INICIAR SCANNER</button>
-        <button class="btn-danger" onclick="closeModal()">CANCELAR</button>
+    <div id="m-face" class="modal-content" style="display:none">
+        <h2>FACE CHECK OBRIGATÓRIO</h2>
+        <div id="u-display" style="font-size:0.7rem; margin-bottom:15px; border:1px dashed var(--primary-green); padding:10px"></div>
+        <button onclick="startScan()">INICIAR CÂMERA</button>
+        <button onclick="closeModal()">CANCELAR</button>
     </div>
 </div>
 
 <div class="main-container">
     <div class="panel">
-        <h2>HISTÓRICO DE ACESSO</h2>
-        <div id="access-history" style="font-size: 0.55rem; overflow-y: auto; flex-grow: 1;"></div>
-        
+        <h2>LOGS DE ACESSO</h2>
+        <div id="logs" style="font-size: 0.6rem; overflow-y: auto; flex-grow: 1;"></div>
         <div id="admin-panel">
-            <h2 style="color: gold;">GERENCIAMENTO DE ACESSOS</h2>
-            <div id="admin-controls"></div>
+            <h2 style="color:gold">GERENCIAR CARTÕES</h2>
+            <div id="admin-btns"></div>
         </div>
     </div>
 
     <div class="terminal-container">
-        <div id="terminal-log">> SISTEMA OPERACIONAL NEXUS V2.0.4...<br>> AGUARDANDO INPUT DO OPERADOR...</div>
+        <div id="terminal-log">> SISTEMA ONLINE...</div>
         <div class="input-area">
-            <button onclick="openModal('CARD')">💳 ACESSO POR CARTÃO</button>
-            <button onclick="openModal('ID')">⌨️ ACESSO POR ID MANUAL</button>
-            <button onclick="openModal('DB')">🗄️ ACESSO AO DATABASE</button>
+            <button onclick="openModal('CARD')">💳 USAR CARTÃO</button>
+            <button onclick="openModal('ID')">⌨️ DIGITAR ID</button>
+            <button onclick="openModal('DB')">🗄️ DATABASE</button>
         </div>
     </div>
 
     <div class="panel">
-        <h2>SCANNER ÓPTICO</h2>
-        <div id="camera-preview-box">
-            <video id="main-webcam" autoplay playsinline></video>
-            <div id="cam-off-text">[ OFFLINE ]</div>
+        <h2>SCANNER</h2>
+        <div id="camera-box">
+            <video id="webcam" autoplay playsinline></video>
+            <div id="cam-txt">[ OFF ]</div>
         </div>
-        <div id="verification-ui" style="display:none; margin-top:10px;">
-            <button onclick="confirmEntry()">VALIDAR ROSTO</button>
-            <button class="btn-danger" onclick="logout()">REJEITAR</button>
+        <div id="v-ui" style="display:none; margin-top:10px;">
+            <button onclick="finishLogin()">CONFIRMAR IDENTIDADE</button>
+            <button class="btn-danger" onclick="logout()">CANCELAR</button>
         </div>
-        <div id="system-lock-status" style="margin-top:20px; text-align: center; font-weight: bold; font-size: 1.2rem; color: var(--error-red);">
-            🔒 LOCKED
-        </div>
-        <button id="btn-logout" style="display:none; margin-top: auto;" onclick="logout()">LOGOFF DO SISTEMA</button>
+        <div id="lock-status" style="text-align:center; margin-top:20px; font-weight:bold; color:var(--error-red)">🔒 LOCKED</div>
+        <button id="btn-out" style="display:none; margin-top:auto" onclick="logout()">LOGOFF</button>
     </div>
 </div>
 
-<canvas id="snapshot-canvas" width="400" height="300" style="display:none"></canvas>
+<canvas id="canvas" width="400" height="300" style="display:none"></canvas>
 
 <script>
-    // --- DATABASE E ESTADOS ---
     const USERS = {
         "ID-HT-1020": { nome: "HEITOR TORRES", key: "ht", nv: 1 },
         "ID-BS-2030": { nome: "BEATRIZ SOARES", key: "bs", nv: 2 },
@@ -294,219 +209,146 @@
     };
 
     let currentUser = null;
-    let streamHandle = null;
-    let targetCaptureId = null;
+    let stream = null;
+    let capId = null;
 
-    // Persistência: Carrega cartões ou inicia padrão
+    // Carrega do LocalStorage ou define padrão
     let cardRegistry = JSON.parse(localStorage.getItem('nexus_cards')) || {
         "ID-HT-1020": true, "ID-BS-2030": true, "ID-RR-3040": true
     };
 
-    function saveRegistry() {
-        localStorage.setItem('nexus_cards', JSON.stringify(cardRegistry));
+    function save() { localStorage.setItem('nexus_cards', JSON.stringify(cardRegistry)); }
+
+    function writeLog(t, err = false) {
+        const l = document.getElementById('terminal-log');
+        l.innerHTML += `<br><span style="color:${err ? 'var(--error-red)' : 'var(--primary-green)'}">> ${t}</span>`;
+        l.scrollTop = l.scrollHeight;
     }
 
-    function writeLog(text, error = false) {
-        const log = document.getElementById('terminal-log');
-        const color = error ? 'var(--error-red)' : 'var(--primary-green)';
-        log.innerHTML += `<br><span style="color:${color}">> ${text}</span>`;
-        log.scrollTop = log.scrollHeight;
-    }
+    window.onload = () => { updateAdmin(); loadLogs(); };
 
-    // --- LOGICA DE UI ---
-    window.onload = () => {
-        updateAdminUI();
-        loadHistory();
-    };
-
-    function openModal(mode) {
+    function openModal(m) {
         document.getElementById('modal-overlay').style.display = 'flex';
-        document.getElementById('modal-db-auth').style.display = (mode === 'DB') ? 'block' : 'none';
-        document.getElementById('modal-card').style.display = (mode === 'CARD') ? 'block' : 'none';
-        document.getElementById('modal-id').style.display = (mode === 'ID') ? 'block' : 'none';
-        document.getElementById('modal-db-view').style.display = 'none';
-        document.getElementById('modal-face-check').style.display = 'none';
+        document.getElementById('m-db-auth').style.display = (m === 'DB') ? 'block' : 'none';
+        document.getElementById('m-card').style.display = (m === 'CARD') ? 'block' : 'none';
+        document.getElementById('m-id').style.display = (m === 'ID') ? 'block' : 'none';
+        document.getElementById('m-db-view').style.display = 'none';
+        document.getElementById('m-face').style.display = 'none';
     }
 
-    function closeModal() {
-        document.getElementById('modal-overlay').style.display = 'none';
-        stopCamera();
-    }
+    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; stopCam(); }
 
-    // --- CONTROLE DE ACESSO ---
-    function loginViaCard(id) {
-        if (!cardRegistry[id]) {
-            writeLog(`ACESSO NEGADO: O CARTÃO ${id} FOI DESATIVADO PELO ADMIN!`, true);
-            closeModal();
-            return;
-        }
+    function loginCard(id) {
+        if (!cardRegistry[id]) { writeLog(`CARTÃO ${id} BLOQUEADO!`, true); closeModal(); return; }
         currentUser = { ...USERS[id], id: id };
-        writeLog(`CARTÃO DETECTADO: ${currentUser.nome}. ACESSO DIRETO CONCEDIDO.`);
+        writeLog(`CARTÃO ${id} ACEITO.`);
         closeModal();
-        confirmEntry(); // Cartão entra direto
+        finishLogin();
     }
 
-    function loginViaID() {
-        const input = document.getElementById('manual-input').value.toUpperCase().trim();
-        if (USERS[input]) {
-            if (!cardRegistry[input]) {
-                writeLog("ERRO: ESTE USUÁRIO ESTÁ BLOQUEADO NO SISTEMA.", true);
-                closeModal();
-                return;
-            }
-            currentUser = { ...USERS[input], id: input };
-            document.getElementById('modal-id').style.display = 'none';
-            document.getElementById('modal-face-check').style.display = 'block';
-            document.getElementById('user-info-display').innerHTML = `USUÁRIO: ${currentUser.nome}<br>NÍVEL: ${currentUser.nv}<br>ID: ${currentUser.id}`;
-        } else {
-            writeLog("ID NÃO RECONHECIDO NO BANCO DE DADOS.", true);
-        }
+    function loginID() {
+        const val = document.getElementById('id-input').value.toUpperCase().trim();
+        if (USERS[val]) {
+            if (!cardRegistry[val]) { writeLog(`ID ${val} SUSPENSO!`, true); closeModal(); return; }
+            currentUser = { ...USERS[val], id: val };
+            document.getElementById('m-id').style.display = 'none';
+            document.getElementById('m-face').style.display = 'block';
+            document.getElementById('u-display').innerHTML = `USER: ${currentUser.nome}<br>NV: ${currentUser.nv}`;
+        } else { writeLog("ID INVÁLIDO.", true); }
     }
 
-    async function startFaceScan() {
-        const photo = localStorage.getItem('photo-' + currentUser.key);
-        if (!photo) {
-            writeLog("ERRO CRÍTICO: FUNCIONÁRIO SEM REGISTRO BIOMÉTRICO!", true);
-            return;
-        }
+    async function startScan() {
+        if (!localStorage.getItem('photo-' + currentUser.key)) { writeLog("ERRO: SEM BIOMETRIA!", true); return; }
         closeModal();
-        const video = document.getElementById('main-webcam');
-        try {
-            streamHandle = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = streamHandle;
-            video.style.display = 'block';
-            document.getElementById('cam-off-text').style.display = 'none';
-            document.getElementById('verification-ui').style.display = 'block';
-            writeLog("INICIANDO RECONHECIMENTO FACIAL...");
-        } catch (e) {
-            writeLog("ERRO: FALHA AO INICIALIZAR HARDWARE ÓPTICO.", true);
-        }
+        const v = document.getElementById('webcam');
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        v.srcObject = stream; v.style.display = 'block';
+        document.getElementById('cam-txt').style.display = 'none';
+        document.getElementById('v-ui').style.display = 'block';
     }
 
-    function confirmEntry() {
-        document.getElementById('system-lock-status').innerText = "🔓 UNLOCKED";
-        document.getElementById('system-lock-status').style.color = "var(--primary-green)";
-        document.getElementById('btn-logout').style.display = 'block';
-        document.getElementById('verification-ui').style.display = 'none';
-        
-        // Ativa painel admin se for NV 2 ou 3
-        if (currentUser.nv >= 2) {
-            document.getElementById('admin-panel').style.display = 'block';
-            updateAdminUI();
-        }
-        
-        writeLog(`SESSÃO INICIADA PARA ${currentUser.nome}.`);
-        saveHistory(`${currentUser.nome} (Nível ${currentUser.nv}) acessou o sistema.`);
-        stopCamera();
+    function finishLogin() {
+        document.getElementById('lock-status').innerHTML = "🔓 UNLOCKED";
+        document.getElementById('lock-status').style.color = "var(--primary-green)";
+        document.getElementById('btn-out').style.display = 'block';
+        document.getElementById('v-ui').style.display = 'none';
+        if (currentUser.nv >= 2) { document.getElementById('admin-panel').style.display = 'block'; updateAdmin(); }
+        writeLog(`ACESSO LIBERADO: ${currentUser.nome}`);
+        addLog(`${currentUser.nome} entrou.`);
+        stopCam();
     }
 
-    // --- DATABASE (FOTOS) ---
     function verifyDB() {
         if (document.getElementById('db-pass').value === "senha1234") {
-            document.getElementById('modal-db-auth').style.display = 'none';
-            document.getElementById('modal-db-view').style.display = 'block';
+            document.getElementById('m-db-auth').style.display = 'none';
+            document.getElementById('m-db-view').style.display = 'block';
             renderDB();
-        } else {
-            writeLog("TENTATIVA DE INVASÃO AO DATABASE DETECTADA!", true);
-            closeModal();
-        }
+        } else { writeLog("SENHA DB INCORRETA!", true); closeModal(); }
+        document.getElementById('db-pass').value = "";
     }
 
     function renderDB() {
-        const list = document.getElementById('db-list');
-        list.innerHTML = '';
+        const d = document.getElementById('db-list'); d.innerHTML = '';
         Object.keys(USERS).forEach(id => {
-            const user = USERS[id];
-            const savedImg = localStorage.getItem('photo-' + user.key);
-            list.innerHTML += `
-                <div class="db-item">
-                    ${savedImg ? `<img src="${savedImg}" class="captured-photo">` : `<div style="height:80px; background:#222; margin-bottom:10px; font-size:0.5rem;">SEM FOTO</div>`}
-                    <div style="font-size:0.5rem; margin-bottom:5px;">${user.nome}</div>
-                    <button onclick="openCapture('${id}')" style="font-size:0.4rem; padding:5px;">CAPTURAR</button>
-                </div>
-            `;
+            const img = localStorage.getItem('photo-' + USERS[id].key);
+            d.innerHTML += `<div class="db-item">
+                ${img ? `<img src="${img}" class="captured-photo">` : '<div style="height:70px; background:#222"></div>'}
+                ${USERS[id].nome}<br><button onclick="openCap('${id}')" style="font-size:0.4rem">FOTO</button>
+            </div>`;
         });
     }
 
-    async function openCapture(id) {
-        targetCaptureId = id;
-        document.getElementById('capture-ui').style.display = 'block';
-        const video = document.getElementById('db-scanner');
-        streamHandle = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = streamHandle;
+    async function openCap(id) {
+        capId = id; document.getElementById('cap-ui').style.display = 'block';
+        const v = document.getElementById('v-db');
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        v.srcObject = stream;
     }
 
     function savePhoto() {
-        const video = document.getElementById('db-scanner');
-        const canvas = document.getElementById('snapshot-canvas');
-        const ctx = canvas.getContext('2d');
+        const v = document.getElementById('v-db');
+        const c = document.getElementById('canvas');
+        const ctx = c.getContext('2d');
         ctx.translate(400, 0); ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0, 400, 300);
-        const data = canvas.toDataURL('image/png');
-        localStorage.setItem('photo-' + USERS[targetCaptureId].key, data);
-        writeLog(`BIOMETRIA DE ${USERS[targetCaptureId].nome} ATUALIZADA.`);
-        renderDB();
-        document.getElementById('capture-ui').style.display = 'none';
-        stopCamera();
+        ctx.drawImage(v, 0, 0, 400, 300);
+        localStorage.setItem('photo-' + USERS[capId].key, c.toDataURL('image/png'));
+        writeLog(`FOTO DE ${USERS[capId].nome} SALVA.`);
+        renderDB(); stopCam();
     }
 
-    // --- ADMIN OVERRIDE ---
-    function updateAdminUI() {
-        const container = document.getElementById('admin-controls');
-        container.innerHTML = '';
+    function updateAdmin() {
+        const c = document.getElementById('admin-btns'); c.innerHTML = '';
         Object.keys(cardRegistry).forEach(id => {
             const active = cardRegistry[id];
-            container.innerHTML += `
-                <div style="margin-bottom:10px; border-bottom:1px solid #222; padding:5px;">
-                    <span style="font-size:0.6rem;">${id}</span>
-                    <button onclick="toggleCardStatus('${id}')" style="width:auto; padding:5px 10px; float:right; ${active ? '' : 'color:red; border-color:red;'}">
-                        ${active ? 'ATIVO' : 'BLOQUEADO'}
-                    </button>
-                    <div style="clear:both"></div>
-                </div>
-            `;
+            c.innerHTML += `<div style="margin-bottom:5px">
+                <span style="font-size:0.5rem">${id}</span>
+                <button onclick="toggleStatus('${id}')" style="width:auto; padding:2px 5px; float:right; ${active ? '' : 'color:red; border-color:red'}">
+                    ${active ? 'ATIVO' : 'OFF'}
+                </button><div style="clear:both"></div></div>`;
         });
     }
 
-    function toggleCardStatus(id) {
-        if (currentUser && currentUser.id === id) {
-            writeLog("ERRO: VOCÊ NÃO PODE BLOQUEAR SEU PRÓPRIO CARTÃO!", true);
-            return;
-        }
-        if (currentUser && currentUser.nv === 2 && USERS[id].nv === 3) {
-            writeLog("ERRO: NÍVEL 2 NÃO TEM AUTORIDADE SOBRE NÍVEL 3.", true);
-            return;
-        }
+    function toggleStatus(id) {
         cardRegistry[id] = !cardRegistry[id];
-        saveRegistry();
-        updateAdminUI();
-        writeLog(`CARTÃO ${id} FOI ${cardRegistry[id] ? 'REATIVADO' : 'SUSPENSO'}.`);
-    }
-
-    // --- UTILITÁRIOS ---
-    function stopCamera() {
-        if (streamHandle) {
-            streamHandle.getTracks().forEach(track => track.stop());
-            streamHandle = null;
+        save(); updateAdmin();
+        writeLog(`${id} FOI ${cardRegistry[id] ? 'LIGADO' : 'DESLIGADO'}.`);
+        if (currentUser && currentUser.id === id && !cardRegistry[id]) {
+            writeLog("CUIDADO: VOCÊ SE BLOQUEOU!", true);
         }
     }
 
-    function saveHistory(msg) {
-        let history = JSON.parse(localStorage.getItem('nexus_history')) || [];
-        history.unshift(`[${new Date().toLocaleTimeString()}] ${msg}`);
-        if(history.length > 50) history.pop();
-        localStorage.setItem('nexus_history', JSON.stringify(history));
-        loadHistory();
+    function stopCam() { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; } }
+    
+    function addLog(m) {
+        let h = JSON.parse(localStorage.getItem('nexus_h')) || [];
+        h.unshift(`[${new Date().toLocaleTimeString()}] ${m}`);
+        localStorage.setItem('nexus_h', JSON.stringify(h.slice(0,20)));
+        loadLogs();
     }
 
-    function loadHistory() {
-        let history = JSON.parse(localStorage.getItem('nexus_history')) || [];
-        document.getElementById('access-history').innerHTML = history.join('<br>');
-    }
-
-    function logout() {
-        location.reload();
-    }
+    function loadLogs() { document.getElementById('logs').innerHTML = (JSON.parse(localStorage.getItem('nexus_h')) || []).join('<br>'); }
+    
+    function logout() { location.reload(); }
 </script>
 </body>
 </html>

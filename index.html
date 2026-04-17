@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus OS - Zero Trust Protocol</title>
+    <title>Nexus OS - Network Simulation</title>
     <style>
         :root {
             --primary-green: #00ff41;
@@ -75,6 +75,7 @@
             margin-bottom: 10px;
             font-weight: bold;
             font-size: 0.75rem;
+            transition: 0.2s;
         }
 
         button:hover { background: var(--primary-green); color: black; }
@@ -110,118 +111,86 @@
             letter-spacing: 5px;
         }
 
-        .db-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
-        .db-item { border: 1px solid #333; padding: 10px; background: #080808; font-size: 0.6rem; }
-        .captured-photo { width: 100%; height: 70px; object-fit: cover; border: 1px solid var(--primary-green); }
-
-        #camera-box {
-            width: 100%; height: 200px;
-            background: #000; border: 1px solid #222;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
+        /* Barra de Progresso Hacker */
+        .progress-container {
+            width: 100%;
+            border: 1px solid #333;
+            height: 10px;
+            margin: 10px 0;
+            display: none;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--primary-green);
+            transition: width 0.1s;
         }
 
-        #webcam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none; }
-        #admin-panel { display: none; border-top: 2px solid #333; padding-top: 15px; margin-top: auto; }
-        
-        .security-alert { color: var(--error-red); font-size: 0.6rem; margin-bottom: 10px; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
+        .geo-fake-data {
+            font-size: 0.6rem;
+            color: gold;
+            margin-bottom: 15px;
+            text-align: left;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
 
 <div id="modal-overlay">
-    <div id="m-db-auth" class="modal-content" style="display:none">
-        <h2>DATABASE ENCRYPTION</h2>
-        <input type="password" id="db-pass" placeholder="KEY">
-        <button onclick="verifyDB()">DECRYPT</button>
-        <button onclick="closeModal()">EXIT</button>
+    <div id="m-start" class="modal-content" style="display:none">
+        <h2>IDENTIFICAÇÃO DE TERMINAL</h2>
+        <div style="font-size: 0.6rem; margin-bottom: 20px;">AVISO: SISTEMA EM MODO DE CONFIANÇA ZERO</div>
+        <button onclick="stepMFA('ID-RR-3040')">LOGAR: RICARDO (CHEFE)</button>
+        <button onclick="stepMFA('ID-BS-2030')">LOGAR: BEATRIZ (GERENTE)</button>
+        <button class="btn-danger" onclick="closeModal()">CANCELAR</button>
     </div>
 
-    <div id="m-db-view" class="modal-content" style="display:none">
-        <h2>FOTOS REGISTRADAS</h2>
-        <div class="db-grid" id="db-list"></div>
-        <div id="cap-ui" style="display:none">
-            <video id="v-db" autoplay playsinline style="width:200px; height:150px; border:1px solid gold;"></video><br>
-            <button onclick="savePhoto()" style="color:gold; border-color:gold">CAPTURAR</button>
+    <div id="m-geo-sim" class="modal-content" style="display:none">
+        <h2>TRIANGULANDO POSIÇÃO...</h2>
+        <div id="geo-steps" class="geo-fake-data"></div>
+        <div class="progress-container" id="p-container">
+            <div class="progress-bar" id="p-bar"></div>
         </div>
-        <button onclick="closeModal()">FECHAR</button>
-    </div>
-
-    <div id="m-selection" class="modal-content" style="display:none">
-        <h2>IDENTIFICAÇÃO REQUERIDA</h2>
-        <div class="security-alert">AVISO: REDE HOSTIL DETECTADA - MFA OBRIGATÓRIO</div>
-        <button onclick="stepToken('CARD')">USAR CARTÃO FÍSICO</button>
-        <button onclick="stepManualID()">DIGITAR ID MANUAL</button>
-        <button class="btn-danger" onclick="closeModal()">ABORTAR</button>
-    </div>
-
-    <div id="m-card-list" class="modal-content" style="display:none">
-        <h2>SELECIONE O NÍVEL</h2>
-        <button onclick="setLoginType('ID-HT-1020')">ACESSO NV 1</button>
-        <button onclick="setLoginType('ID-BS-2030')">ACESSO NV 2</button>
-        <button onclick="setLoginType('ID-RR-3040')">ACESSO NV 3</button>
-        <button onclick="openModal('CARD')">VOLTAR</button>
+        <p id="geo-status" style="font-size: 0.7rem;">CONECTANDO AOS SATÉLITES NEXUS...</p>
     </div>
 
     <div id="m-token" class="modal-content" style="display:none">
-        <h2>TOKEN DE SEGURANÇA (MFA)</h2>
-        <p id="token-status" style="font-size:0.6rem">AGUARDANDO CÓDIGO DO DISPOSITIVO...</p>
+        <h2>MFA: TOKEN DINÂMICO</h2>
+        <p style="font-size: 0.6rem;">DIGITE O CÓDIGO ENVIADO AO SEU TERMINAL MÓVEL</p>
         <input type="text" id="token-input" maxlength="6" placeholder="000000">
-        <button onclick="validateToken()">AUTENTICAR TOKEN</button>
-        <button class="btn-danger" onclick="closeModal()">CANCELAR</button>
+        <button onclick="validateFinal()">CONFIRMAR AUTENTICAÇÃO</button>
     </div>
 </div>
 
 <div class="main-container">
     <div class="panel">
-        <h2>LOGS DO SISTEMA</h2>
+        <h2>MONITOR DE REDE</h2>
         <div id="logs" style="font-size: 0.6rem; overflow-y: auto; flex-grow: 1;"></div>
-        <div id="admin-panel">
-            <h2 style="color:gold">OVERRIDE</h2>
-            <div id="admin-btns"></div>
-        </div>
     </div>
 
     <div class="terminal-container">
-        <div id="terminal-log">> AGUARDANDO CONEXÃO...</div>
+        <div id="terminal-log">> AGUARDANDO COMANDO INICIAL...</div>
         <div class="input-area">
-            <button onclick="openModal('CARD')">🔑 INICIAR LOGIN (MFA)</button>
-            <button onclick="openModal('DB')">🗄️ DATABASE</button>
+            <button onclick="openModal()">🔑 ENTRAR NO SISTEMA</button>
         </div>
     </div>
 
     <div class="panel">
-        <h2>SECURE SCANNER</h2>
-        <div id="camera-box">
-            <video id="webcam" autoplay playsinline></video>
-            <div id="cam-txt">[ ENCRYPTION ACTIVE ]</div>
-        </div>
-        <div id="lock-status" style="text-align:center; margin-top:20px; font-weight:bold; color:var(--error-red)">🔒 ACCESS RESTRICTED</div>
-        <button id="btn-out" style="display:none; margin-top:auto" onclick="logout()">TERMINATE SESSION</button>
+        <h2>STATUS ÓPTICO</h2>
+        <div id="lock-status" style="text-align:center; margin-top:20px; font-weight:bold; color:var(--error-red)">🔒 BLOQUEADO</div>
+        <button id="btn-out" style="display:none; margin-top:auto" onclick="location.reload()">TERMINAR SESSÃO</button>
     </div>
 </div>
 
-<canvas id="canvas" width="400" height="300" style="display:none"></canvas>
-
 <script>
     const USERS = {
-        "ID-HT-1020": { nome: "HEITOR TORRES", key: "ht", nv: 1 },
-        "ID-BS-2030": { nome: "BEATRIZ SOARES", key: "bs", nv: 2 },
-        "ID-RR-3040": { nome: "RICARDO ROCHA", key: "rr", nv: 3 }
+        "ID-BS-2030": { nome: "BEATRIZ SOARES", nv: 2 },
+        "ID-RR-3040": { nome: "RICARDO ROCHA", nv: 3 }
     };
 
     let currentUser = null;
-    let stream = null;
-    let capId = null;
-    let inactivityTimer = null;
     let currentToken = null;
-
-    let cardRegistry = JSON.parse(localStorage.getItem('nexus_cards')) || {
-        "ID-HT-1020": true, "ID-BS-2030": true, "ID-RR-3040": true
-    };
-
-    function save() { localStorage.setItem('nexus_cards', JSON.stringify(cardRegistry)); }
 
     function writeLog(t, err = false) {
         const l = document.getElementById('terminal-log');
@@ -229,158 +198,65 @@
         l.scrollTop = l.scrollHeight;
     }
 
-    // --- LÓGICA DE TOKEN (SISTEMA HOSTIL) ---
-    function generateToken() {
-        currentToken = Math.floor(100000 + Math.random() * 900000).toString();
-        writeLog("SISTEMA: NOVO TOKEN GERADO NO DISPOSITIVO MÓVEL.");
-        writeLog(`[DEBUG TOKEN]: ${currentToken}`, true); // Simula o token chegando no celular
-    }
-
-    function validateToken() {
-        const input = document.getElementById('token-input').value;
-        if (input === currentToken) {
-            writeLog("TOKEN VALIDADO. AMBIENTE SEGURO CONFIRMADO.");
-            document.getElementById('m-token').style.display = 'none';
-            finishLogin();
-        } else {
-            writeLog("ERRO: TOKEN INVÁLIDO! ACESSO BLOQUEADO POR SEGURANÇA.", true);
-            closeModal();
-        }
-    }
-
-    // --- LOGIN FLOW ---
-    function openModal(m) {
+    function openModal() {
         document.getElementById('modal-overlay').style.display = 'flex';
-        document.getElementById('m-db-auth').style.display = (m === 'DB') ? 'block' : 'none';
-        document.getElementById('m-selection').style.display = (m === 'CARD') ? 'block' : 'none';
-        document.getElementById('m-card-list').style.display = 'none';
+        document.getElementById('m-start').style.display = 'block';
+        document.getElementById('m-geo-sim').style.display = 'none';
         document.getElementById('m-token').style.display = 'none';
-        document.getElementById('m-db-view').style.display = 'none';
     }
 
-    function stepToken(type) {
-        document.getElementById('m-selection').style.display = 'none';
-        document.getElementById('m-card-list').style.display = 'block';
-    }
-
-    function setLoginType(id) {
-        if (!cardRegistry[id]) { writeLog("CARTÃO DESATIVADO!", true); closeModal(); return; }
-        currentUser = { ...USERS[id], id: id };
-        document.getElementById('m-card-list').style.display = 'none';
-        document.getElementById('m-token').style.display = 'block';
-        document.getElementById('token-input').value = "";
-        generateToken();
-    }
-
-    function stepManualID() {
-        const id = prompt("DIGITE SEU ID:");
-        if (USERS[id]) {
-            currentUser = { ...USERS[id], id: id };
-            document.getElementById('m-selection').style.display = 'none';
-            document.getElementById('m-token').style.display = 'block';
-            generateToken();
-        } else {
-            writeLog("ID NÃO RECONHECIDO.", true);
-            closeModal();
-        }
-    }
-
-    function finishLogin() {
+    function closeModal() {
         document.getElementById('modal-overlay').style.display = 'none';
-        document.getElementById('lock-status').innerHTML = "🔓 SECURE CONNECTION ESTABLISHED";
-        document.getElementById('lock-status').style.color = "var(--primary-green)";
-        document.getElementById('btn-out').style.display = 'block';
+    }
+
+    async function stepMFA(id) {
+        currentUser = { ...USERS[id], id: id };
+        document.getElementById('m-start').style.display = 'none';
+        document.getElementById('m-geo-sim').style.display = 'block';
+        document.getElementById('p-container').style.display = 'block';
         
-        if (currentUser.nv >= 2) { 
-            document.getElementById('admin-panel').style.display = 'block'; 
-            updateAdmin(); 
+        const steps = [
+            "BUSCANDO ENDEREÇO IP...",
+            "LOCALIZANDO TORRES DE CELULAR...",
+            "TRIANGULANDO VIA WI-FI...",
+            "REQUISITANDO SATÉLITES GPS...",
+            "VERIFICANDO PERÍMETRO DE SEGURANÇA..."
+        ];
+
+        const geoDisplay = document.getElementById('geo-steps');
+        const bar = document.getElementById('p-bar');
+        
+        // Simulação visual de carregamento
+        for (let i = 0; i < steps.length; i++) {
+            geoDisplay.innerHTML += `+ ${steps[i]}<br>`;
+            bar.style.width = ((i + 1) * 20) + "%";
+            await new Promise(r => setTimeout(r, 800)); // Espera 0.8s por passo
         }
+
+        writeLog("LOCALIZAÇÃO VERIFICADA: DENTRO DO PERÍMETRO PERMITIDO.");
         
-        writeLog(`BEM-VINDO, ${currentUser.nome}. SESSÃO MONITORADA.`);
-        addLog(`${currentUser.nome} autenticou via MFA.`);
-        resetInactivityTimer();
+        // Vai para a tela de Token
+        document.getElementById('m-geo-sim').style.display = 'none';
+        document.getElementById('m-token').style.display = 'block';
+        
+        currentToken = Math.floor(100000 + Math.random() * 900000).toString();
+        writeLog(`[SECURITY TOKEN]: ${currentToken}`, true);
     }
 
-    // --- RESTANTE DAS FUNÇÕES (TIMEOUT/ADMIN/DB) ---
-    function resetInactivityTimer() {
-        if (!currentUser) return;
-        clearTimeout(inactivityTimer);
-        inactivityTimer = setTimeout(() => {
-            writeLog("LOGOFF: SESSÃO EXPIRADA POR INATIVIDADE.", true);
-            setTimeout(logout, 1500);
-        }, 120000); 
+    function validateFinal() {
+        const val = document.getElementById('token-input').value;
+        if (val === currentToken) {
+            writeLog("MULTI-FACTOR AUTH: SUCESSO.");
+            document.getElementById('modal-overlay').style.display = 'none';
+            document.getElementById('lock-status').innerHTML = "🔓 ACESSO LIBERADO";
+            document.getElementById('lock-status').style.color = "var(--primary-green)";
+            document.getElementById('btn-out').style.display = 'block';
+        } else {
+            writeLog("TOKEN INVÁLIDO. TENTATIVA REGISTRADA.", true);
+            alert("ERRO DE AUTENTICAÇÃO!");
+            location.reload();
+        }
     }
-
-    window.addEventListener('mousemove', resetInactivityTimer);
-    window.addEventListener('keypress', resetInactivityTimer);
-
-    function verifyDB() {
-        if (document.getElementById('db-pass').value === "senha1234") {
-            document.getElementById('m-db-auth').style.display = 'none';
-            document.getElementById('m-db-view').style.display = 'block';
-            renderDB();
-        } else { writeLog("ACESSO NEGADO!", true); closeModal(); }
-    }
-
-    function renderDB() {
-        const d = document.getElementById('db-list'); d.innerHTML = '';
-        Object.keys(USERS).forEach(id => {
-            const img = localStorage.getItem('photo-' + USERS[id].key);
-            d.innerHTML += `<div class="db-item">
-                ${img ? `<img src="${img}" class="captured-photo">` : '<div style="height:70px; background:#222"></div>'}
-                ${USERS[id].nome}<br><button onclick="openCap('${id}')" style="font-size:0.4rem">UPDATE</button>
-            </div>`;
-        });
-    }
-
-    async function openCap(id) {
-        capId = id; document.getElementById('cap-ui').style.display = 'block';
-        const v = document.getElementById('v-db');
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        v.srcObject = stream;
-    }
-
-    function savePhoto() {
-        const v = document.getElementById('v-db');
-        const c = document.getElementById('canvas');
-        const ctx = c.getContext('2d');
-        ctx.translate(400, 0); ctx.scale(-1, 1);
-        ctx.drawImage(v, 0, 0, 400, 300);
-        localStorage.setItem('photo-' + USERS[capId].key, c.toDataURL('image/png'));
-        renderDB(); stopCam();
-    }
-
-    function updateAdmin() {
-        const c = document.getElementById('admin-btns'); c.innerHTML = '';
-        Object.keys(cardRegistry).forEach(id => {
-            const active = cardRegistry[id];
-            c.innerHTML += `<div style="margin-bottom:8px">
-                <span style="font-size:0.5rem">${USERS[id].nome}</span>
-                <button onclick="toggleStatus('${id}')" style="width:auto; padding:2px 8px; float:right; ${active ? '' : 'color:red; border-color:red'}">
-                    ${active ? 'ON' : 'OFF'}
-                </button><div style="clear:both"></div></div>`;
-        });
-    }
-
-    function toggleStatus(id) {
-        cardRegistry[id] = !cardRegistry[id];
-        save(); updateAdmin();
-        writeLog(`SISTEMA: CREDENCIAL ${id} ALTERADA.`);
-    }
-
-    function stopCam() { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; } }
-    
-    function addLog(m) {
-        let h = JSON.parse(localStorage.getItem('nexus_h')) || [];
-        h.unshift(`[${new Date().toLocaleTimeString()}] ${m}`);
-        localStorage.setItem('nexus_h', JSON.stringify(h.slice(0,20)));
-        loadLogs();
-    }
-
-    function loadLogs() { document.getElementById('logs').innerHTML = (JSON.parse(localStorage.getItem('nexus_h')) || []).join('<br>'); }
-    
-    function logout() { location.reload(); }
-    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; stopCam(); }
 </script>
 </body>
 </html>

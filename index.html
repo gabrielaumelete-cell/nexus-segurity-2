@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Security OS - Zero Trace Edition</title>
+    <title>Nexus Security OS - Badge Integration</title>
     <style>
         :root {
             --primary-green: #00ff41;
@@ -12,6 +12,9 @@
             --dark-bg: #0a0a0a;
             --panel-bg: #111;
             --border-style: 1px solid #222;
+            --nv1: #00ff41;
+            --nv2: #ffcc00;
+            --nv3: #ff3300;
         }
 
         body {
@@ -70,12 +73,12 @@
             background: transparent;
             color: var(--primary-green);
             border: 1px solid var(--primary-green);
-            padding: 12px;
+            padding: 10px;
             cursor: pointer;
             width: 90%;
             margin-bottom: 10px;
             font-weight: bold;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
 
         button:hover:not(:disabled) { background: var(--primary-green); color: black; }
@@ -94,24 +97,58 @@
         .modal-content {
             background: #000;
             border: 2px solid var(--primary-green);
-            padding: 30px;
-            width: 500px;
+            padding: 20px;
+            width: 600px;
             text-align: center;
         }
 
-        input {
-            background: #0a0a0a;
-            border: 1px solid var(--primary-green);
-            color: var(--primary-green);
-            padding: 12px;
-            width: 80%;
-            margin-bottom: 20px;
-            text-align: center;
+        /* ESTILO DOS CRACHÁS NO DB */
+        .db-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
+        
+        .badge {
+            border: 1px solid #333;
+            background: #080808;
+            padding: 10px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        .db-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
-        .db-item { border: 1px solid #333; padding: 10px; background: #080808; font-size: 0.6rem; }
-        .captured-photo { width: 100%; height: 70px; object-fit: cover; border: 1px solid var(--primary-green); }
+        .badge-nv-1 { border-top: 5px solid var(--nv1); }
+        .badge-nv-2 { border-top: 5px solid var(--nv2); }
+        .badge-nv-3 { border-top: 5px solid var(--nv3); }
+
+        .badge-photo-frame {
+            width: 100px;
+            height: 100px;
+            background: #111;
+            border: 1px solid #333;
+            margin-bottom: 10px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .badge-photo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .badge-info {
+            font-size: 0.55rem;
+            line-height: 1.2;
+        }
+
+        .nv-tag {
+            font-weight: bold;
+            margin-top: 5px;
+            display: block;
+            padding: 2px;
+            background: #222;
+        }
 
         #camera-box {
             width: 100%; height: 200px;
@@ -122,93 +159,89 @@
 
         #webcam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none; }
         #admin-panel { display: none; border-top: 2px solid #333; padding-top: 15px; margin-top: auto; }
-        
         #face-choice-ui { display: none; margin-top: 10px; }
         .panic-btn { margin-top: 20px; border-color: #ff9900; color: #ff9900; }
         .hint { font-size: 0.6rem; color: #666; margin-bottom: 10px; }
     </style>
 </head>
-<body onload="clearInputs()"> <div id="modal-overlay">
+<body onload="clearInputs()">
+
+<div id="modal-overlay">
     <div id="m-db-auth" class="modal-content" style="display:none">
-        <form id="form-db" onsubmit="return false;">
+        <form onsubmit="return false;">
             <h2>DATABASE ACCESS</h2>
             <p class="hint">SENHA: <span style="color:var(--primary-green)">senha1234</span></p>
-            <input type="password" id="db-pass" placeholder="SENHA" autocomplete="new-password">
+            <input type="password" id="db-pass" placeholder="SENHA" autocomplete="new-password" 
+            style="background:#000; border:1px solid var(--primary-green); color:var(--primary-green); padding:10px; width:70%; margin-bottom:10px; text-align:center;">
             <button onclick="verifyDB()">ENTRAR</button>
             <button onclick="closeModal()">SAIR</button>
         </form>
     </div>
 
-    <div id="m-db-view" class="modal-content" style="display:none">
-        <h2>REGISTROS BIOMÉTRICOS</h2>
+    <div id="m-db-view" class="modal-content" style="display:none; width: 800px;">
+        <h2>IDENTIDADES BIOMÉTRICAS</h2>
         <div class="db-grid" id="db-list"></div>
-        <div id="cap-ui" style="display:none">
-            <video id="v-db" autoplay playsinline style="width:200px; height:150px; border:1px solid gold;"></video><br>
-            <button onclick="savePhoto()" style="color:gold; border-color:gold">CAPTURAR</button>
+        <div id="cap-ui" style="display:none; border:1px solid gold; padding:10px; margin-top:10px;">
+            <video id="v-db" autoplay playsinline style="width:160px; height:120px; border:1px solid gold;"></video><br>
+            <button onclick="savePhoto()" style="color:gold; border-color:gold; width:auto;">[ REGISTRAR FACE ]</button>
         </div>
         <button onclick="closeModal()">FECHAR</button>
     </div>
 
     <div id="m-card" class="modal-content" style="display:none">
         <h2>LEITOR DE CARTÃO</h2>
-        <button onclick="loginProcess('ID-HT-1020', 'CARD')">NÍVEL 1 (HEITOR)</button>
-        <button onclick="loginProcess('ID-BS-2030', 'CARD')">NÍVEL 2 (BEATRIZ)</button>
-        <button onclick="loginProcess('ID-RR-3040', 'CARD')">NÍVEL 3 (RICARDO)</button>
+        <button onclick="loginProcess('ID-HT-1020', 'CARD')">NV 1 (HEITOR)</button>
+        <button onclick="loginProcess('ID-BS-2030', 'CARD')">NV 2 (BEATRIZ)</button>
+        <button onclick="loginProcess('ID-RR-3040', 'CARD')">NV 3 (RICARDO)</button>
         <button onclick="closeModal()">VOLTAR</button>
     </div>
 
     <div id="m-id" class="modal-content" style="display:none">
-        <form id="form-id" onsubmit="return false;">
+        <form onsubmit="return false;">
             <h2>ID MANUAL (RECOVERY)</h2>
-            <p class="hint">EX: ID-RR-3040</p>
-            <input type="text" id="id-input" placeholder="ID-XX-0000" autocomplete="off">
+            <input type="text" id="id-input" placeholder="ID-XX-0000" autocomplete="off" style="background:#000; border:1px solid var(--primary-green); color:var(--primary-green); padding:10px; width:70%; margin-bottom:10px; text-align:center;">
             <button onclick="loginID()">VERIFICAR</button>
             <button onclick="closeModal()">VOLTAR</button>
         </form>
     </div>
 
     <div id="m-geo" class="modal-content" style="display:none">
-        <h2>TRIANGULANDO POSIÇÃO...</h2>
-        <div id="geo-steps" style="font-size: 0.6rem; color: gold; text-align: left; margin-bottom: 10px;"></div>
-        <div style="width: 100%; border: 1px solid #333; height: 10px; margin: 15px 0;">
-            <div id="p-bar" style="width: 0%; height: 100%; background: var(--primary-green); transition: width 0.1s;"></div>
-        </div>
+        <h2>SINCRONIZANDO SATÉLITE...</h2>
+        <div id="geo-steps" style="font-size: 0.6rem; color: gold; text-align: left;"></div>
+        <div style="width: 100%; border: 1px solid #333; height: 10px; margin: 15px 0;"><div id="p-bar" style="width: 0%; height: 100%; background: var(--primary-green); transition: width 0.1s;"></div></div>
     </div>
 </div>
 
 <div class="main-container">
     <div class="panel">
-        <h2>SESSION LOGS</h2>
-        <div id="logs" style="font-size: 0.6rem; overflow-y: auto; flex-grow: 1;"></div>
+        <h2>LOGS</h2>
+        <div id="logs" style="font-size: 0.5rem; overflow-y: auto; flex-grow: 1;"></div>
         <div id="admin-panel">
-            <h2 style="color:gold">SISTEMA OVERRIDE</h2>
+            <h2 style="color:gold">OVERRIDE</h2>
             <div id="admin-btns"></div>
         </div>
     </div>
 
     <div class="terminal-container">
-        <div id="terminal-log">> SISTEMA INICIALIZADO...</div>
+        <div id="terminal-log">> AGUARDANDO INTERAÇÃO...</div>
         <div class="input-area">
-            <button onclick="openModal('CARD')">💳 LOGIN CARTÃO</button>
-            <button onclick="openModal('ID')">⌨️ LOGIN MANUAL</button>
+            <button onclick="openModal('CARD')">💳 CARTÃO</button>
+            <button onclick="openModal('ID')">⌨️ MANUAL</button>
             <button onclick="openModal('DB')">🗄️ DATABASE</button>
         </div>
     </div>
 
     <div class="panel">
-        <h2>MONITOR ÓPTICO</h2>
+        <h2>OPTICAL SCAN</h2>
         <div id="camera-box">
             <video id="webcam" autoplay playsinline></video>
             <div id="cam-txt">[ STANDBY ]</div>
         </div>
-        
         <div id="face-choice-ui">
-            <button onclick="finishLogin()" style="color:var(--primary-green); border-color:var(--primary-green)">[ ACEITAR ]</button>
-            <button onclick="failFaceID()" style="color:var(--error-red); border-color:var(--error-red)">[ REJEITAR ]</button>
+            <button onclick="finishLogin()" style="color:var(--primary-green); border-color:var(--primary-green)">ACEITAR</button>
+            <button onclick="failFaceID()" style="color:var(--error-red); border-color:var(--error-red)">REJEITAR</button>
         </div>
-
         <div id="lock-status" style="text-align:center; margin-top:20px; font-weight:bold; color:var(--error-red)">🔒 LOCKED</div>
-        
         <button id="btn-panic" class="panic-btn" style="display:none" onclick="panicLogout()">🕶️ REMOVER ÓCULOS</button>
         <button id="btn-out" style="display:none; margin-top:auto" onclick="logout()">LOGOUT & WIPE</button>
     </div>
@@ -218,30 +251,18 @@
 
 <script>
     const USERS = {
-        "ID-HT-1020": { nome: "HEITOR TORRES", key: "ht", nv: 1 },
-        "ID-BS-2030": { nome: "BEATRIZ SOARES", key: "bs", nv: 2 },
-        "ID-RR-3040": { nome: "RICARDO ROCHA", key: "rr", nv: 3 }
+        "ID-HT-1020": { nome: "HEITOR TORRES", key: "ht", nv: 1, cargo: "OPERADOR" },
+        "ID-BS-2030": { nome: "BEATRIZ SOARES", key: "bs", nv: 2, cargo: "SUPERVISORA" },
+        "ID-RR-3040": { nome: "RICARDO ROCHA", key: "rr", nv: 3, cargo: "DIRETOR" }
     };
 
     let currentUser = null;
     let stream = null;
-    let cardRegistry = JSON.parse(localStorage.getItem('nexus_cards')) || {
-        "ID-HT-1020": true, "ID-BS-2030": true, "ID-RR-3040": true
-    };
+    let capId = null;
+    let cardRegistry = JSON.parse(localStorage.getItem('nexus_cards')) || {"ID-HT-1020": true, "ID-BS-2030": true, "ID-RR-3040": true};
 
     function clearInputs() {
-        const inputs = document.getElementsByTagName('input');
-        for (let i = 0; i < inputs.length; i++) {
-            inputs[i].value = "";
-        }
-    }
-
-    function saveCards() { localStorage.setItem('nexus_cards', JSON.stringify(cardRegistry)); }
-    
-    function writeLog(t, err = false) {
-        const l = document.getElementById('terminal-log');
-        l.innerHTML += `<br><span style="color:${err ? 'var(--error-red)' : 'var(--primary-green)'}">> ${t}</span>`;
-        l.scrollTop = l.scrollHeight;
+        document.querySelectorAll('input').forEach(i => i.value = "");
     }
 
     function openModal(m) {
@@ -253,113 +274,36 @@
         document.getElementById('m-geo').style.display = 'none';
     }
 
-    function closeModal() { 
-        clearInputs();
-        document.getElementById('modal-overlay').style.display = 'none'; 
-    }
-
-    function loginID() {
-        const val = document.getElementById('id-input').value.toUpperCase().trim();
-        if (USERS[val]) { loginProcess(val, 'RECOVERY'); } 
-        else { writeLog("ID INVÁLIDO.", true); }
-        clearInputs();
-    }
-
-    async function loginProcess(id, mode) {
-        if (mode === 'CARD' && !cardRegistry[id]) {
-            writeLog(`CARTÃO ${id} BLOQUEADO!`, true);
-            closeModal(); return;
-        }
-
-        currentUser = { ...USERS[id], id: id };
-        document.getElementById('m-card').style.display = 'none';
-        document.getElementById('m-id').style.display = 'none';
-        document.getElementById('m-geo').style.display = 'block';
-
-        const tasks = ["BYPASSING...", "TRIANGULATION...", "SAT-LINK OK"];
-        document.getElementById('geo-steps').innerHTML = "";
-        for (let i = 0; i < tasks.length; i++) {
-            document.getElementById('geo-steps').innerHTML += `+ ${tasks[i]}<br>`;
-            document.getElementById('p-bar').style.width = ((i + 1) * 33) + "%";
-            await new Promise(r => setTimeout(r, 600));
-        }
-        closeModal();
-        startFaceID();
-    }
-
-    async function startFaceID() {
-        const v = document.getElementById('webcam');
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            v.srcObject = stream; v.style.display = 'block';
-            document.getElementById('cam-txt').style.display = 'none';
-            document.getElementById('face-choice-ui').style.display = 'block';
-            writeLog("BIOMETRIA REQUERIDA.");
-        } catch(e) { writeLog("ERRO: CÂMERA OFF.", true); }
-    }
-
-    function failFaceID() {
-        writeLog("FACE REJEITADA!", true);
-        setTimeout(logout, 1000);
-    }
-
-    function finishLogin() {
-        document.getElementById('face-choice-ui').style.display = 'none';
-        document.getElementById('lock-status').innerHTML = "🔓 UNLOCKED";
-        document.getElementById('lock-status').style.color = "var(--primary-green)";
-        document.getElementById('btn-out').style.display = 'block';
-        document.getElementById('btn-panic').style.display = 'block';
-        
-        if (currentUser.nv >= 2) { 
-            document.getElementById('admin-panel').style.display = 'block'; 
-            updateAdmin(); 
-        }
-        writeLog(`${currentUser.nome} LOGADO.`);
-        addLog(`${currentUser.nome} logou.`);
-    }
-
-    function updateAdmin() {
-        const c = document.getElementById('admin-btns'); c.innerHTML = '';
-        Object.keys(cardRegistry).forEach(id => {
-            const active = cardRegistry[id];
-            const canEdit = currentUser.nv >= USERS[id].nv;
-            c.innerHTML += `<div style="margin-bottom:8px">
-                <span style="font-size:0.5rem">${USERS[id].nome}</span>
-                <button onclick="toggleStatus('${id}')" 
-                    ${!canEdit ? 'disabled' : ''}
-                    style="width:auto; padding:2px 8px; float:right; ${active ? '' : 'color:red; border-color:red'}">
-                    ${active ? 'ON' : 'OFF'}
-                </button><div style="clear:both"></div></div>`;
-        });
-    }
-
-    function toggleStatus(id) {
-        cardRegistry[id] = !cardRegistry[id];
-        saveCards(); updateAdmin();
-    }
-
-    function panicLogout() {
-        writeLog("PANIC: SESSÃO ENCERRADA.", true);
-        setTimeout(logout, 800);
-    }
+    function closeModal() { clearInputs(); document.getElementById('modal-overlay').style.display = 'none'; }
 
     function verifyDB() {
         if (document.getElementById('db-pass').value === "senha1234") {
             document.getElementById('m-db-auth').style.display = 'none';
             document.getElementById('m-db-view').style.display = 'block';
-            renderDB();
-        } else { writeLog("SENHA ERRADA!", true); closeModal(); }
+            renderBadges();
+        } else { closeModal(); }
         clearInputs();
     }
 
-    function renderDB() {
+    function renderBadges() {
         const d = document.getElementById('db-list'); d.innerHTML = '';
         Object.keys(USERS).forEach(id => {
-            const img = localStorage.getItem('photo-' + USERS[id].key);
-            d.innerHTML += `<div class="db-item">
-                ${img ? `<img src="${img}" class="captured-photo">` : '<div style="height:70px; background:#222"></div>'}
-                ${USERS[id].nome}<br><button onclick="openCap('${id}')" style="font-size:0.4rem">FOTO</button>
-            </div>`;
+            const user = USERS[id];
+            const img = localStorage.getItem('photo-' + user.key);
+            
+            d.innerHTML += `
+                <div class="badge badge-nv-${user.nv}">
+                    <div class="badge-photo-frame">
+                        ${img ? `<img src="${img}">` : '<span style="font-size:0.4rem; color:#444">SEM BIOMETRIA</span>'}
+                    </div>
+                    <div class="badge-info">
+                        <strong>${user.nome}</strong><br>
+                        ${user.cargo}<br>
+                        <span class="nv-tag" style="color: var(--nv${user.nv})">NÍVEL 0${user.nv}</span>
+                    </div>
+                    <button onclick="openCap('${id}')" style="font-size:0.5rem; margin-top:10px; width:100%">SCAN FACE</button>
+                </div>
+            `;
         });
     }
 
@@ -377,30 +321,81 @@
         ctx.translate(400, 0); ctx.scale(-1, 1);
         ctx.drawImage(v, 0, 0, 400, 300);
         localStorage.setItem('photo-' + USERS[capId].key, c.toDataURL('image/png'));
-        renderDB();
+        renderBadges();
         v.srcObject.getTracks().forEach(t => t.stop());
+        document.getElementById('cap-ui').style.display = 'none';
     }
 
-    function addLog(m) {
-        let h = JSON.parse(localStorage.getItem('nexus_h')) || [];
-        h.unshift(`[${new Date().toLocaleTimeString()}] ${m}`);
-        localStorage.setItem('nexus_h', JSON.stringify(h.slice(0,20)));
-        loadLogs();
+    // --- FUNÇÕES DE LOGIN (REUTILIZADAS) ---
+    function loginID() {
+        const val = document.getElementById('id-input').value.toUpperCase().trim();
+        if (USERS[val]) { loginProcess(val, 'RECOVERY'); } 
+        clearInputs();
     }
-    
+
+    async function loginProcess(id, mode) {
+        if (mode === 'CARD' && !cardRegistry[id]) { closeModal(); return; }
+        currentUser = { ...USERS[id], id: id };
+        document.getElementById('m-card').style.display = 'none';
+        document.getElementById('m-id').style.display = 'none';
+        document.getElementById('m-geo').style.display = 'block';
+        document.getElementById('geo-steps').innerHTML = "";
+        for (let i = 0; i < 3; i++) {
+            document.getElementById('geo-steps').innerHTML += `+ SYNC STEP ${i+1}...<br>`;
+            document.getElementById('p-bar').style.width = ((i + 1) * 33) + "%";
+            await new Promise(r => setTimeout(r, 600));
+        }
+        closeModal();
+        startFaceID();
+    }
+
+    async function startFaceID() {
+        const v = document.getElementById('webcam');
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            v.srcObject = stream; v.style.display = 'block';
+            document.getElementById('cam-txt').style.display = 'none';
+            document.getElementById('face-choice-ui').style.display = 'block';
+        } catch(e) {}
+    }
+
+    function failFaceID() { logout(); }
+
+    function finishLogin() {
+        document.getElementById('face-choice-ui').style.display = 'none';
+        document.getElementById('lock-status').innerHTML = "🔓 UNLOCKED";
+        document.getElementById('lock-status').style.color = "var(--primary-green)";
+        document.getElementById('btn-out').style.display = 'block';
+        document.getElementById('btn-panic').style.display = 'block';
+        if (currentUser.nv >= 2) { 
+            document.getElementById('admin-panel').style.display = 'block'; 
+            updateAdmin(); 
+        }
+        addLog(`${currentUser.nome} ENTROU.`);
+    }
+
+    function updateAdmin() {
+        const c = document.getElementById('admin-btns'); c.innerHTML = '';
+        Object.keys(cardRegistry).forEach(id => {
+            const active = cardRegistry[id];
+            const canEdit = currentUser.nv >= USERS[id].nv;
+            c.innerHTML += `<div style="margin-bottom:5px; font-size:0.5rem">
+                ${USERS[id].nome} 
+                <button onclick="toggleStatus('${id}')" ${!canEdit ? 'disabled' : ''} style="width:auto; float:right; padding:2px 5px; ${active?'':'border-color:red; color:red'}">${active?'ON':'OFF'}</button>
+            </div>`;
+        });
+    }
+
+    function toggleStatus(id) { cardRegistry[id] = !cardRegistry[id]; localStorage.setItem('nexus_cards', JSON.stringify(cardRegistry)); updateAdmin(); }
+    function panicLogout() { setTimeout(logout, 500); }
+    function writeLog(t) { const l = document.getElementById('terminal-log'); l.innerHTML += `<br>> ${t}`; l.scrollTop = l.scrollHeight; }
+    function addLog(m) { let h = JSON.parse(localStorage.getItem('nexus_h')) || []; h.unshift(`[${new Date().toLocaleTimeString()}] ${m}`); localStorage.setItem('nexus_h', JSON.stringify(h.slice(0,20))); loadLogs(); }
     function loadLogs() { document.getElementById('logs').innerHTML = (JSON.parse(localStorage.getItem('nexus_h')) || []).join('<br>'); }
-
-    function logout() {
+    function logout() { 
         if(stream) stream.getTracks().forEach(t => t.stop());
         localStorage.removeItem('nexus_h');
-        
-        // HARD WIPE DOS INPUTS ANTES DO RELOAD
         clearInputs();
-        
-        // Reseta todos os forms
-        document.querySelectorAll('form').forEach(f => f.reset());
-        
-        location.reload();
+        location.reload(); 
     }
 </script>
 </body>

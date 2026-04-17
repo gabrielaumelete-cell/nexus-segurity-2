@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus OS - Network Simulation</title>
+    <title>Nexus Security - Geo-Verification Mode</title>
     <style>
         :root {
             --primary-green: #00ff41;
@@ -75,11 +75,9 @@
             margin-bottom: 10px;
             font-weight: bold;
             font-size: 0.75rem;
-            transition: 0.2s;
         }
 
         button:hover { background: var(--primary-green); color: black; }
-        .btn-danger { border-color: var(--error-red); color: var(--error-red); }
 
         #modal-overlay {
             display: none;
@@ -99,98 +97,73 @@
             text-align: center;
         }
 
-        input {
-            background: #0a0a0a;
-            border: 1px solid var(--primary-green);
-            color: var(--primary-green);
-            padding: 12px;
-            width: 80%;
-            margin-bottom: 20px;
-            text-align: center;
-            font-size: 1.2rem;
-            letter-spacing: 5px;
-        }
-
-        /* Barra de Progresso Hacker */
         .progress-container {
             width: 100%;
             border: 1px solid #333;
-            height: 10px;
-            margin: 10px 0;
-            display: none;
+            height: 12px;
+            margin: 20px 0;
+            background: #050505;
         }
         .progress-bar {
             width: 0%;
             height: 100%;
             background: var(--primary-green);
+            box-shadow: 0 0 10px var(--primary-green);
             transition: width 0.1s;
         }
 
-        .geo-fake-data {
-            font-size: 0.6rem;
-            color: gold;
-            margin-bottom: 15px;
+        .geo-data {
+            font-size: 0.7rem;
+            color: #888;
             text-align: left;
-            line-height: 1.5;
+            margin-bottom: 15px;
+            height: 100px;
+            overflow: hidden;
         }
     </style>
 </head>
 <body>
 
 <div id="modal-overlay">
-    <div id="m-start" class="modal-content" style="display:none">
-        <h2>IDENTIFICAÇÃO DE TERMINAL</h2>
-        <div style="font-size: 0.6rem; margin-bottom: 20px;">AVISO: SISTEMA EM MODO DE CONFIANÇA ZERO</div>
-        <button onclick="stepMFA('ID-RR-3040')">LOGAR: RICARDO (CHEFE)</button>
-        <button onclick="stepMFA('ID-BS-2030')">LOGAR: BEATRIZ (GERENTE)</button>
-        <button class="btn-danger" onclick="closeModal()">CANCELAR</button>
+    <div id="m-select" class="modal-content" style="display:none">
+        <h2>IDENTIFICAÇÃO REQUERIDA</h2>
+        <button onclick="startGeoAuth('RICARDO ROCHA (NV 3)')">ENTRAR COMO RICARDO</button>
+        <button onclick="startGeoAuth('BEATRIZ SOARES (NV 2)')">ENTRAR COMO BEATRIZ</button>
+        <button onclick="closeModal()" style="border-color: #555; color: #555;">CANCELAR</button>
     </div>
 
-    <div id="m-geo-sim" class="modal-content" style="display:none">
-        <h2>TRIANGULANDO POSIÇÃO...</h2>
-        <div id="geo-steps" class="geo-fake-data"></div>
-        <div class="progress-container" id="p-container">
+    <div id="m-geo" class="modal-content" style="display:none">
+        <h2>VERIFICANDO PERÍMETRO</h2>
+        <div id="geo-list" class="geo-data"></div>
+        <div class="progress-container">
             <div class="progress-bar" id="p-bar"></div>
         </div>
-        <p id="geo-status" style="font-size: 0.7rem;">CONECTANDO AOS SATÉLITES NEXUS...</p>
-    </div>
-
-    <div id="m-token" class="modal-content" style="display:none">
-        <h2>MFA: TOKEN DINÂMICO</h2>
-        <p style="font-size: 0.6rem;">DIGITE O CÓDIGO ENVIADO AO SEU TERMINAL MÓVEL</p>
-        <input type="text" id="token-input" maxlength="6" placeholder="000000">
-        <button onclick="validateFinal()">CONFIRMAR AUTENTICAÇÃO</button>
+        <div id="geo-status" style="font-size: 0.6rem; letter-spacing: 2px;">SINCRONIZANDO...</div>
     </div>
 </div>
 
 <div class="main-container">
     <div class="panel">
-        <h2>MONITOR DE REDE</h2>
+        <h2>SISTEMA LOGS</h2>
         <div id="logs" style="font-size: 0.6rem; overflow-y: auto; flex-grow: 1;"></div>
     </div>
 
     <div class="terminal-container">
-        <div id="terminal-log">> AGUARDANDO COMANDO INICIAL...</div>
+        <div id="terminal-log">> CONEXÃO ENCRIPTADA ESTABELECIDA...</div>
         <div class="input-area">
-            <button onclick="openModal()">🔑 ENTRAR NO SISTEMA</button>
+            <button onclick="openModal()">🔓 INICIAR PROTOCOLO DE ACESSO</button>
         </div>
     </div>
 
     <div class="panel">
-        <h2>STATUS ÓPTICO</h2>
-        <div id="lock-status" style="text-align:center; margin-top:20px; font-weight:bold; color:var(--error-red)">🔒 BLOQUEADO</div>
+        <h2>LOCK-STATUS</h2>
+        <div id="lock-status" style="text-align:center; margin-top:20px; font-weight:bold; color:var(--error-red)">🔒 SECURE ACCESS ONLY</div>
         <button id="btn-out" style="display:none; margin-top:auto" onclick="location.reload()">TERMINAR SESSÃO</button>
     </div>
 </div>
 
 <script>
-    const USERS = {
-        "ID-BS-2030": { nome: "BEATRIZ SOARES", nv: 2 },
-        "ID-RR-3040": { nome: "RICARDO ROCHA", nv: 3 }
-    };
-
-    let currentUser = null;
-    let currentToken = null;
+    let activeUser = "";
 
     function writeLog(t, err = false) {
         const l = document.getElementById('terminal-log');
@@ -200,62 +173,53 @@
 
     function openModal() {
         document.getElementById('modal-overlay').style.display = 'flex';
-        document.getElementById('m-start').style.display = 'block';
-        document.getElementById('m-geo-sim').style.display = 'none';
-        document.getElementById('m-token').style.display = 'none';
+        document.getElementById('m-select').style.display = 'block';
+        document.getElementById('m-geo').style.display = 'none';
     }
 
     function closeModal() {
         document.getElementById('modal-overlay').style.display = 'none';
     }
 
-    async function stepMFA(id) {
-        currentUser = { ...USERS[id], id: id };
-        document.getElementById('m-start').style.display = 'none';
-        document.getElementById('m-geo-sim').style.display = 'block';
-        document.getElementById('p-container').style.display = 'block';
-        
-        const steps = [
-            "BUSCANDO ENDEREÇO IP...",
-            "LOCALIZANDO TORRES DE CELULAR...",
-            "TRIANGULANDO VIA WI-FI...",
-            "REQUISITANDO SATÉLITES GPS...",
-            "VERIFICANDO PERÍMETRO DE SEGURANÇA..."
+    async function startGeoAuth(user) {
+        activeUser = user;
+        document.getElementById('m-select').style.display = 'none';
+        document.getElementById('m-geo').style.display = 'block';
+
+        const bar = document.getElementById('p-bar');
+        const list = document.getElementById('geo-list');
+        const status = document.getElementById('geo-status');
+
+        const tasks = [
+            "SOLICITANDO IP PÚBLICO...",
+            "TRIANGULANDO TORRES DE CELULAR...",
+            "VALIDANDO ENDEREÇO MAC...",
+            "REQUISITANDO COORDENADAS SATELITAIS...",
+            "VERIFICANDO CERCA GEOGRÁFICA (GEOFENCE)...",
+            "ANALISANDO INTEGRIDADE DO TERMINAL..."
         ];
 
-        const geoDisplay = document.getElementById('geo-steps');
-        const bar = document.getElementById('p-bar');
-        
-        // Simulação visual de carregamento
-        for (let i = 0; i < steps.length; i++) {
-            geoDisplay.innerHTML += `+ ${steps[i]}<br>`;
-            bar.style.width = ((i + 1) * 20) + "%";
-            await new Promise(r => setTimeout(r, 800)); // Espera 0.8s por passo
+        for (let i = 0; i < tasks.length; i++) {
+            list.innerHTML += `> ${tasks[i]} <br>`;
+            bar.style.width = ((i + 1) * 16.6) + "%";
+            await new Promise(r => setTimeout(r, 700));
         }
 
-        writeLog("LOCALIZAÇÃO VERIFICADA: DENTRO DO PERÍMETRO PERMITIDO.");
+        status.innerHTML = "LOCALIZAÇÃO CONFIRMADA!";
+        status.style.color = "var(--primary-green)";
         
-        // Vai para a tela de Token
-        document.getElementById('m-geo-sim').style.display = 'none';
-        document.getElementById('m-token').style.display = 'block';
-        
-        currentToken = Math.floor(100000 + Math.random() * 900000).toString();
-        writeLog(`[SECURITY TOKEN]: ${currentToken}`, true);
+        await new Promise(r => setTimeout(r, 1000));
+        finishAccess();
     }
 
-    function validateFinal() {
-        const val = document.getElementById('token-input').value;
-        if (val === currentToken) {
-            writeLog("MULTI-FACTOR AUTH: SUCESSO.");
-            document.getElementById('modal-overlay').style.display = 'none';
-            document.getElementById('lock-status').innerHTML = "🔓 ACESSO LIBERADO";
-            document.getElementById('lock-status').style.color = "var(--primary-green)";
-            document.getElementById('btn-out').style.display = 'block';
-        } else {
-            writeLog("TOKEN INVÁLIDO. TENTATIVA REGISTRADA.", true);
-            alert("ERRO DE AUTENTICAÇÃO!");
-            location.reload();
-        }
+    function finishAccess() {
+        document.getElementById('modal-overlay').style.display = 'none';
+        document.getElementById('lock-status').innerHTML = "🔓 ACESSO CONCEDIDO";
+        document.getElementById('lock-status').style.color = "var(--primary-green)";
+        document.getElementById('btn-out').style.display = 'block';
+        
+        writeLog(`USUÁRIO AUTENTICADO: ${activeUser}`);
+        writeLog("VERIFICAÇÃO GEOGRÁFICA: DENTRO DO PERÍMETRO.");
     }
 </script>
 </body>
